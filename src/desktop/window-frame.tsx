@@ -1,0 +1,111 @@
+import { TextAttributes } from "@opentui/core";
+import { createElement, useRef, useState } from "react";
+import { useRenderer } from "@opentui/react";
+import type { AppManifest } from "../apps/types";
+import { useActionStatus } from "./action-status";
+import { useWindowManager, WindowProvider } from "./window-context";
+import type { ManagedWindow } from "./window-store";
+
+type Viewport = { width: number; height: number };
+
+export function WindowFrame({ app, window, viewport }: { app: AppManifest; window: ManagedWindow; viewport: Viewport }) {
+  const dragOffset = useRef<{ left: number; top: number } | null>(null);
+  const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const renderer = useRenderer();
+  const { setAction } = useActionStatus();
+  const focus = useWindowManager((state) => state.focus);
+  const move = useWindowManager((state) => state.move);
+  const minimize = useWindowManager((state) => state.minimize);
+  const close = useWindowManager((state) => state.close);
+  const maxLeft = Math.max(0, viewport.width - app.initialSize.width);
+  const maxTop = Math.max(1, viewport.height - 2);
+  const left = Math.min(window.left, maxLeft);
+  const top = Math.min(window.top, maxTop);
+
+  function moveTo(x: number, y: number) {
+    move(app.id, Math.max(0, Math.min(maxLeft, x)), Math.max(1, Math.min(maxTop, y)));
+  }
+
+  return (
+    <box
+      position="absolute"
+      left={left}
+      top={top}
+      width={app.initialSize.width}
+      height={app.initialSize.height}
+      zIndex={window.zIndex}
+      backgroundColor="#000000"
+      flexDirection="column"
+      onMouseDown={() => focus(app.id)}
+    >
+      <box
+        flexGrow={1}
+        border
+        borderStyle="single"
+        borderColor="#39ff14"
+        backgroundColor="#000d04"
+        flexDirection="column"
+      >
+        <box
+          height={1}
+          backgroundColor={isDragging ? "#39ff14" : isTitleHovered ? "#0c7a22" : "#145c22"}
+          onMouseOver={() => {
+            setIsTitleHovered(true);
+            setAction("DRAG TO REPOSITION");
+            renderer.setMousePointer("move");
+          }}
+          onMouseOut={() => {
+            if (!isDragging) setIsTitleHovered(false);
+            if (!isDragging) setAction("DOUBLE CLICK TO OPEN");
+            renderer.setMousePointer("default");
+          }}
+          onMouseDown={(event) => {
+            focus(app.id);
+            dragOffset.current = { left: event.x - left, top: event.y - top };
+            setIsDragging(true);
+          }}
+        onMouseDrag={(event) => {
+          if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
+        }}
+          onMouseDragEnd={() => {
+            dragOffset.current = null;
+            setIsDragging(false);
+          }}
+        >
+          <box height={1} paddingX={1} flexDirection="row" alignItems="center">
+            <box flexGrow={1} height={1} alignItems="center" justifyContent="center">
+              <text fg={isDragging ? "#000d04" : "#7cff5b"} attributes={TextAttributes.BOLD}>{window.title}</text>
+            </box>
+            <box width={4} height={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
+              event.stopPropagation();
+              minimize(app.id);
+            }}>
+              <text fg="#7cff5b" attributes={TextAttributes.BOLD}>[_]</text>
+            </box>
+            <box width={4} height={1} marginLeft={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
+              event.stopPropagation();
+              close(app.id);
+            }}>
+              <text fg="#7cff5b" attributes={TextAttributes.BOLD}>[X]</text>
+            </box>
+          </box>
+        </box>
+        <box flexGrow={1} flexDirection="row">
+          <box flexGrow={1} padding={1}>
+            <WindowProvider appId={app.id}>
+              {createElement(app.Component)}
+            </WindowProvider>
+          </box>
+          <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
+            <box flexGrow={1} width={1} backgroundColor="#0c7a22" flexDirection="column">
+              <box width={1} height={3} alignItems="center" justifyContent="center" backgroundColor="#39ff14">
+                <text fg="#062b0d">▓</text>
+              </box>
+            </box>
+          </box>
+        </box>
+      </box>
+    </box>
+  );
+}
