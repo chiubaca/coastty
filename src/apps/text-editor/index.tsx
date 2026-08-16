@@ -1,7 +1,9 @@
 import { TextAttributes } from "@opentui/core";
 import { useEffect, useRef, useState } from "react";
 import type { TextareaRenderable } from "@opentui/core";
-import { useWindow } from "../../desktop/window-context";
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
+import type { AppComponentProps } from "../types";
+import { windowFocusedAtom, windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
 
 const STARTER_DOCUMENT = `Untitled note
 
@@ -9,15 +11,18 @@ The terminal is quiet tonight.
 
 Write something worth keeping.`;
 
-export function TextEditor() {
+export function TextEditor({ appId }: AppComponentProps) {
   const editor = useRef<TextareaRenderable>(null);
   const loadedInitialContent = useRef(false);
   const [dirty, setDirty] = useState(false);
-  const { focused, setTitle } = useWindow();
+  const focused = useAtomValue(windowFocusedAtom(appId));
+  const dispatchWindow = useAtomSet(windowManagerAtom);
 
   useEffect(() => {
-    setTitle(dirty ? "Untitled note *" : "Untitled note");
-  }, [dirty]);
+    dispatchWindow(
+      WindowCommand.SetTitle({ appId, title: dirty ? "Untitled note *" : "Untitled note" }),
+    );
+  }, [appId, dirty, dispatchWindow]);
 
   function save() {
     setDirty(false);

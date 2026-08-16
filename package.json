@@ -16,10 +16,14 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@effect-atom/atom": "0.7.0",
+    "@effect-atom/atom-react": "0.7.0",
+    "@effect/platform": "0.97.1",
+    "@effect/platform-bun": "0.91.2",
     "@kud/glyphs": "^0.3.0",
     "@opentui/core": "^0.4.5",
     "@opentui/react": "^0.4.5",
-    "react": "^19.2.6",
-    "zustand": "^5.0.14"
+    "effect": "3.22.1",
+    "react": "^19.2.6"
   }
 }
