@@ -1,17 +1,23 @@
-import { createCliRenderer } from "@opentui/core";
-import { createRoot } from "@opentui/react";
-import { ActionStatusProvider } from "./desktop/action-status";
+import * as Registry from "@effect-atom/atom/Registry";
+import { RegistryContext } from "@effect-atom/atom-react/RegistryContext";
+import { BunRuntime } from "@effect/platform-bun";
+import { Effect, Layer } from "effect";
 import { Desktop } from "./desktop/desktop";
-import { WindowManagerProvider } from "./desktop/window-context";
-import { createWindowManager } from "./desktop/window-store";
+import { OpenTui, OpenTuiLive } from "./runtime/open-tui";
 
-const renderer = await createCliRenderer({ enableMouseMovement: true });
-const windowManager = createWindowManager();
+const program = Effect.gen(function* () {
+  const openTui = yield* OpenTui;
+  const registry = yield* Registry.AtomRegistry;
 
-createRoot(renderer).render(
-  <WindowManagerProvider manager={windowManager}>
-    <ActionStatusProvider>
+  yield* openTui.mount(
+    <RegistryContext.Provider value={registry}>
       <Desktop />
-    </ActionStatusProvider>
-  </WindowManagerProvider>,
-);
+    </RegistryContext.Provider>,
+  );
+
+  yield* openTui.closed;
+});
+
+const MainLive = Layer.mergeAll(Registry.layer, OpenTuiLive);
+
+program.pipe(Effect.provide(MainLive), BunRuntime.runMain);

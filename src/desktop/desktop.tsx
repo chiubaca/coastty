@@ -1,9 +1,12 @@
 import { TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState } from "react";
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
+import * as HashMap from "effect/HashMap";
+import * as Option from "effect/Option";
 import { apps } from "../apps/registry";
-import { ActionStatus, useActionStatus } from "./action-status";
-import { useWindowManager } from "./window-context";
+import { ActionStatus, actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
+import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
 
 const DOUBLE_CLICK_MS = 350;
@@ -13,29 +16,27 @@ export function Desktop() {
   const [selectedAppId, setSelectedAppId] = useState(apps[0]?.id ?? "");
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
   const [lastClick, setLastClick] = useState({ appId: "", at: 0 });
-  const { setAction } = useActionStatus();
-  const windows = useWindowManager((state) => state.windows);
-  const focusedAppId = useWindowManager((state) => state.focusedAppId);
-  const open = useWindowManager((state) => state.open);
-  const restore = useWindowManager((state) => state.restore);
-  const focus = useWindowManager((state) => state.focus);
+  const setAction = useAtomSet(actionStatusAtom);
+  const windows = useAtomValue(windowsAtom);
+  const focusedAppId = useAtomValue(focusedAppIdAtom);
+  const dispatchWindow = useAtomSet(windowManagerAtom);
 
   useEffect(() => {
-    setAction("DOUBLE CLICK TO OPEN");
+    setAction(DEFAULT_ACTION_STATUS);
   }, [selectedAppId, setAction]);
 
   function activate(appId: string) {
     const app = apps.find((candidate) => candidate.id === appId);
     if (!app) return;
-    const window = windows[appId];
-    if (!window) open(app);
-    else if (window.minimized) restore(appId);
-    else focus(appId);
+    const window = HashMap.get(windows, appId);
+    if (Option.isNone(window)) dispatchWindow(WindowCommand.Open({ app }));
+    else if (window.value.minimized) dispatchWindow(WindowCommand.Restore({ appId }));
+    else dispatchWindow(WindowCommand.Focus({ appId }));
   }
 
   useKeyboard((key) => {
-    const focused = focusedAppId ? windows[focusedAppId] : undefined;
-    if (focused) return;
+    const focusedWindow = Option.flatMap(focusedAppId, (appId) => HashMap.get(windows, appId));
+    if (Option.isSome(focusedWindow)) return;
 
     const selectedIndex = Math.max(0, apps.findIndex((app) => app.id === selectedAppId));
     if (key.name === "tab" || key.name === "right" || key.name === "down") {
@@ -48,7 +49,9 @@ export function Desktop() {
     }
   });
 
-  const minimizedApps = apps.filter((app) => windows[app.id]?.minimized);
+  const minimizedApps = apps.filter((app) =>
+    HashMap.get(windows, app.id).pipe(Option.exists((window) => window.minimized)),
+  );
 
   return (
     <box backgroundColor="#000000" flexGrow={1}>
@@ -88,14 +91,16 @@ export function Desktop() {
       })}
 
       {apps.map((app) => {
-        const window = windows[app.id];
-        return window && !window.minimized ? <WindowFrame key={app.id} app={app} window={window} viewport={{ width, height }} /> : null;
+        const window = HashMap.get(windows, app.id);
+        return Option.isSome(window) && !window.value.minimized
+          ? <WindowFrame key={app.id} app={app} window={window.value} viewport={{ width, height }} />
+          : null;
       })}
 
       {minimizedApps.length > 0 && (
         <box position="absolute" left={0} right={0} bottom={0} height={3} paddingX={1} flexDirection="row" alignItems="center" gap={1} border borderColor="#ffffff">
           {minimizedApps.map((app) => (
-            <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor="#ffffff" onMouseDown={() => restore(app.id)}>
+            <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor="#ffffff" onMouseDown={() => dispatchWindow(WindowCommand.Restore({ appId: app.id }))}>
               <text fg="#000000">{app.title}</text>
             </box>
           ))}

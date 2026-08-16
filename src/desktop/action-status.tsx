@@ -1,27 +1,15 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import * as Atom from "@effect-atom/atom/Atom";
+import { useAtomValue } from "@effect-atom/atom-react/Hooks";
 
-const DEFAULT_ACTION = "DOUBLE CLICK TO OPEN";
+export const DEFAULT_ACTION_STATUS = "DOUBLE CLICK TO OPEN";
 
-type ActionStatusValue = {
-  action: string;
-  setAction: (action: string) => void;
-};
-
-const ActionStatusContext = createContext<ActionStatusValue | null>(null);
-
-export function ActionStatusProvider({ children }: { children: ReactNode }) {
-  const [action, setAction] = useState(DEFAULT_ACTION);
-  return <ActionStatusContext value={{ action, setAction }}>{children}</ActionStatusContext>;
-}
-
-export function useActionStatus(): ActionStatusValue {
-  const status = useContext(ActionStatusContext);
-  if (!status) throw new Error("useActionStatus must be used inside an action status provider");
-  return status;
-}
+export const actionStatusAtom = Atom.make(DEFAULT_ACTION_STATUS).pipe(
+  Atom.keepAlive,
+  Atom.withLabel("desktop/action-status"),
+);
 
 export function ActionStatus() {
-  const { action } = useActionStatus();
+  const action = useAtomValue(actionStatusAtom);
 
   return (
     <box position="absolute" right={1} bottom={1} zIndex={1000} height={1} paddingX={1} border borderColor="#39ff14" backgroundColor="#000d04">

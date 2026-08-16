@@ -1,12 +1,18 @@
 import { TextAttributes } from "@opentui/core";
-import { useWindow } from "../../desktop/window-context";
+import { useAtomSet } from "@effect-atom/atom-react/Hooks";
+import type { AppComponentProps } from "../types";
+import { windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
 
-export function LofiPlayer() {
-  const { setTitle } = useWindow();
+export function LofiPlayer({ appId }: AppComponentProps) {
+  const dispatchWindow = useAtomSet(windowManagerAtom);
 
   return (
     <box padding={2} flexGrow={1} flexDirection="column" gap={1}>
-      <box onMouseDown={() => setTitle("lofi.fm - Night Bus Radio")}>
+      <box
+        onMouseDown={() =>
+          dispatchWindow(WindowCommand.SetTitle({ appId, title: "lofi.fm - Night Bus Radio" }))
+        }
+      >
         <text fg="#ffffff" attributes={TextAttributes.BOLD}>Night Bus Radio</text>
       </box>
       <text fg="#ffffff">rain on glass / side a</text>
