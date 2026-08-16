@@ -24,8 +24,10 @@ export function useWindow() {
   const manager = useContext(WindowManagerContext);
   if (!appId) throw new Error("useWindow must be used inside a window");
   if (!manager) throw new Error("useWindow must be used inside a window manager");
+  const focused = useStore(manager, (state) => state.focusedAppId === appId);
 
   return {
+    focused,
     minimize: () => manager.getState().minimize(appId),
     close: () => manager.getState().close(appId),
     setTitle: (title: string) => manager.getState().setTitle(appId, title),

@@ -1,4 +1,5 @@
 import { LofiPlayer } from "./lofi-player";
+import { TextEditor } from "./text-editor";
 import { appIcon } from "./icons";
 import type { AppManifest } from "./types";
 
@@ -12,11 +13,11 @@ export const apps: AppManifest[] = [
     Component: LofiPlayer,
   },
   {
-    id: "test",
-    title: "test",
-    icon: appIcon({ glyph: "bug", fallback: "!" }),
-    initialPosition: { left: 24, top: 5 },
-    initialSize: { width: 46, height: 16 },
-    Component: LofiPlayer,
+    id: "text-editor",
+    title: "TextEdit",
+    icon: appIcon({ glyph: "file", fallback: "#" }),
+    initialPosition: { left: 16, top: 4 },
+    initialSize: { width: 62, height: 22 },
+    Component: TextEditor,
   },
 ];

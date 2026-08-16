@@ -17,11 +17,8 @@ export function Desktop() {
   const windows = useWindowManager((state) => state.windows);
   const focusedAppId = useWindowManager((state) => state.focusedAppId);
   const open = useWindowManager((state) => state.open);
-  const close = useWindowManager((state) => state.close);
-  const minimize = useWindowManager((state) => state.minimize);
   const restore = useWindowManager((state) => state.restore);
   const focus = useWindowManager((state) => state.focus);
-  const move = useWindowManager((state) => state.move);
 
   useEffect(() => {
     setAction("DOUBLE CLICK TO OPEN");
@@ -38,24 +35,7 @@ export function Desktop() {
 
   useKeyboard((key) => {
     const focused = focusedAppId ? windows[focusedAppId] : undefined;
-    if (key.ctrl && focused) {
-      if (key.name === "m") return minimize(focused.appId);
-      if (key.name === "w") return close(focused.appId);
-      const step = key.shift ? 5 : 1;
-      const direction = key.name === "left" ? [-step, 0] as const
-        : key.name === "right" ? [step, 0] as const
-          : key.name === "up" ? [0, -step] as const
-            : key.name === "down" ? [0, step] as const
-              : null;
-      if (direction) {
-        const app = apps.find((candidate) => candidate.id === focused.appId);
-        if (!app) return;
-        const maxLeft = Math.max(0, width - app.initialSize.width);
-        const maxTop = Math.max(1, height - 2);
-        move(focused.appId, Math.max(0, Math.min(maxLeft, focused.left + direction[0])), Math.max(1, Math.min(maxTop, focused.top + direction[1])));
-        return;
-      }
-    }
+    if (focused) return;
 
     const selectedIndex = Math.max(0, apps.findIndex((app) => app.id === selectedAppId));
     if (key.name === "tab" || key.name === "right" || key.name === "down") {
