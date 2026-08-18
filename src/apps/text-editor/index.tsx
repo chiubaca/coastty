@@ -1,4 +1,3 @@
-import { TextAttributes } from "@opentui/core";
 import { useEffect, useRef, useState } from "react";
 import type { TextareaRenderable } from "@opentui/core";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
@@ -60,31 +59,22 @@ export function TextEditor({ appId, onScrollStateChange }: AppComponentProps) {
   }, [onScrollStateChange]);
 
   return (
-    <box flexGrow={1} flexDirection="column" backgroundColor="#f2eedc">
-      <box height={1} paddingX={1} justifyContent="space-between" backgroundColor="#d7cfb3">
-        <text fg="#292419" attributes={TextAttributes.BOLD}>UNTITLED NOTE{dirty ? "  *" : ""}</text>
-        <text fg="#5a513b">PLAIN TEXT</text>
-      </box>
-      <box height={1} paddingX={1} gap={2} backgroundColor="#ebe4cc">
-        <text fg="#292419" onMouseDown={newDocument}>[ New ]</text>
-        <text fg="#292419" onMouseDown={save}>[ Save ]</text>
-        <text fg="#756b51">Ctrl+S saves</text>
-      </box>
+    <box flexGrow={1} flexDirection="column" backgroundColor="#000d04">
       <textarea
         ref={editor}
         focused={focused}
         flexGrow={1}
         initialValue={STARTER_DOCUMENT}
-        backgroundColor="#f2eedc"
-        focusedBackgroundColor="#f2eedc"
-        textColor="#292419"
-        focusedTextColor="#292419"
-        cursorColor="#d14f2a"
-        selectionBg="#d9c595"
-        selectionFg="#292419"
+        backgroundColor="#000d04"
+        focusedBackgroundColor="#000d04"
+        textColor="#d7ffd0"
+        focusedTextColor="#d7ffd0"
+        cursorColor="#39ff14"
+        selectionBg="#145c22"
+        selectionFg="#ffffff"
         wrapMode="word"
         placeholder="Start writing..."
-        placeholderColor="#998f76"
+        placeholderColor="#3e9b4e"
         onContentChange={() => {
           if (loadedInitialContent.current) setDirty(true);
           else loadedInitialContent.current = true;
@@ -95,12 +85,9 @@ export function TextEditor({ appId, onScrollStateChange }: AppComponentProps) {
         onSizeChange={reportScrollState}
         onKeyDown={(key) => {
           if (key.ctrl && key.name === "s") save();
+          if (key.ctrl && key.name === "n") newDocument();
         }}
       />
-      <box height={1} paddingX={1} justifyContent="space-between" backgroundColor="#d7cfb3">
-        <text fg="#5a513b">Click to edit</text>
-        <text fg="#5a513b">AUTOSAVE OFF</text>
-      </box>
     </box>
   );
 }

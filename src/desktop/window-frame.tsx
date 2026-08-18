@@ -23,8 +23,9 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const maxTop = Math.max(1, viewport.height - 2);
   const left = Math.min(window.left, maxLeft);
   const top = Math.min(window.top, maxTop);
+  const contentPadding = app.contentPadding ?? 1;
   const hasOverflow = scrollState !== null && scrollState.size > scrollState.viewportSize;
-  const trackHeight = app.initialSize.height - 5;
+  const trackHeight = app.initialSize.height - 3 - contentPadding * 2;
   const thumbHeight = hasOverflow
     ? Math.max(1, Math.min(trackHeight, Math.round((scrollState.viewportSize / scrollState.size) * trackHeight)))
     : 0;
@@ -109,7 +110,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           </box>
         </box>
         <box flexGrow={1} flexDirection="row">
-          <box flexGrow={1} padding={1}>
+          <box flexGrow={1} padding={contentPadding}>
             {createElement(app.Component, { appId: app.id, onScrollStateChange: setScrollState })}
           </box>
           {hasOverflow && <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
@@ -119,7 +120,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
               backgroundColor="#031807"
               flexDirection="column"
               onMouseDown={(event) => {
-                const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 3)));
+                const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 2 + contentPadding)));
                 const position = Math.round((relativeY / Math.max(1, trackHeight - 1)) * maxScroll);
                 scrollState.scrollTo(position);
               }}
@@ -139,7 +140,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
                 }}
                 onMouseDown={() => setIsScrollbarDragging(true)}
                 onMouseDrag={(event) => {
-                  const relativeY = Math.max(0, Math.min(trackHeight - thumbHeight, event.y - (top + 3)));
+                  const relativeY = Math.max(0, Math.min(trackHeight - thumbHeight, event.y - (top + 2 + contentPadding)));
                   const position = Math.round((relativeY / Math.max(1, trackHeight - thumbHeight)) * maxScroll);
                   scrollState.scrollTo(position);
                 }}

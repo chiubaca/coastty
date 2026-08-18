@@ -18,5 +18,6 @@ export type AppManifest = {
   icon: string;
   initialPosition: { left: number; top: number };
   initialSize: { width: number; height: number };
+  contentPadding?: number;
   Component: ComponentType<AppComponentProps>;
 };
