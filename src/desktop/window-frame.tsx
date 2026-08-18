@@ -42,6 +42,13 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       backgroundColor="#000000"
       flexDirection="column"
       onMouseDown={() => dispatchWindow(WindowCommand.Focus({ appId: app.id }))}
+      onMouseDrag={(event) => {
+        if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
+      }}
+      onMouseDragEnd={() => {
+        dragOffset.current = null;
+        setIsDragging(false);
+      }}
     >
       <box
         flexGrow={1}
@@ -68,13 +75,6 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
             dispatchWindow(WindowCommand.Focus({ appId: app.id }));
             dragOffset.current = { left: event.x - left, top: event.y - top };
             setIsDragging(true);
-          }}
-          onMouseDrag={(event) => {
-            if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
-          }}
-          onMouseDragEnd={() => {
-            dragOffset.current = null;
-            setIsDragging(false);
           }}
         >
           <box height={1} paddingX={1} flexDirection="row" alignItems="center">

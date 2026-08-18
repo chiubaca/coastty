@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { createTestRenderer } from "@opentui/core/testing";
+import { createRoot, flushSync } from "@opentui/react";
 import * as Registry from "@effect-atom/atom/Registry";
+import { RegistryContext } from "@effect-atom/atom-react/RegistryContext";
 import { HashMap, Option } from "effect";
+import { createElement } from "react";
+import { WindowFrame } from "../desktop/window-frame";
 import type { AppManifest } from "../apps/types";
 import { actionStatusAtom, DEFAULT_ACTION_STATUS } from "../desktop/action-status";
 import {
@@ -115,6 +120,38 @@ describe("window manager", () => {
       registry.set(actionStatusAtom, "DRAG TO REPOSITION");
       expect(registry.get(actionStatusAtom)).toBe("DRAG TO REPOSITION");
     } finally {
+      registry.dispose();
+    }
+  });
+
+  test("continues a title-bar drag when its first movement enters window content", async () => {
+    const registry = Registry.make();
+    const { renderer, mockMouse, flush } = await createTestRenderer({ width: 80, height: 24 });
+    const window = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
+    const root = createRoot(renderer);
+
+    try {
+      registry.set(windowManagerAtom, WindowCommand.Open({ app: lofiApp }));
+      flushSync(() => {
+        root.render(
+          createElement(
+            RegistryContext.Provider,
+            { value: registry },
+            createElement(WindowFrame, { app: lofiApp, window: windowFrom(window), viewport: { width: 80, height: 24 } }),
+          ),
+        );
+      });
+      await flush();
+
+      await mockMouse.pressDown(26, 6);
+      expect(windowFrom(registry.get(windowManagerAtom)).zIndex).toBe(3);
+      await mockMouse.emitMouseEvent("drag", 26, 9);
+      await mockMouse.release(26, 9);
+
+      expect(windowFrom(registry.get(windowManagerAtom))).toMatchObject({ left: 24, top: 8 });
+    } finally {
+      root.unmount();
+      renderer.destroy();
       registry.dispose();
     }
   });
