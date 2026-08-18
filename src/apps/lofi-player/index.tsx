@@ -3,9 +3,10 @@ import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppComponentProps } from "../types";
 import { windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
 import { LofiText } from "../../ui/lofi-text";
-import { lofiColors } from "../../ui/theme";
+import { useTheme } from "../../ui/theme";
 
 export function LofiPlayer({ appId }: AppComponentProps) {
+  const { theme: { colors } } = useTheme();
   const dispatchWindow = useAtomSet(windowManagerAtom);
 
   return (
@@ -15,11 +16,11 @@ export function LofiPlayer({ appId }: AppComponentProps) {
           dispatchWindow(WindowCommand.SetTitle({ appId, title: "lofi.fm - Night Bus Radio" }))
         }
       >
-        <LofiText fg={lofiColors.highlight} attributes={TextAttributes.BOLD}>Night Bus Radio</LofiText>
+        <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>Night Bus Radio</LofiText>
       </box>
-      <LofiText fg={lofiColors.primary}>rain on glass / side a</LofiText>
-      <LofiText fg={lofiColors.accent}>[======----------]  2:14</LofiText>
-      <LofiText fg={lofiColors.muted} attributes={TextAttributes.DIM}>Click the station name to update the window title.</LofiText>
+      <LofiText fg={colors.primary}>rain on glass / side a</LofiText>
+      <LofiText fg={colors.accent}>[======----------]  2:14</LofiText>
+      <LofiText fg={colors.muted} attributes={TextAttributes.DIM}>Click the station name to update the window title.</LofiText>
     </box>
   );
 }

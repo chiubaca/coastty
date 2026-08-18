@@ -3,7 +3,7 @@ import type { TextareaRenderable } from "@opentui/core";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import type { AppComponentProps, AppScrollState } from "../types";
 import { windowFocusedAtom, windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
-import { lofiColors } from "../../ui/theme";
+import { useTheme } from "../../ui/theme";
 
 const STARTER_DOCUMENT = `Untitled note
 
@@ -12,6 +12,7 @@ The terminal is quiet tonight.
 Write something worth keeping.`;
 
 export function TextEditor({ appId, onScrollStateChange }: AppComponentProps) {
+  const { theme: { colors } } = useTheme();
   const editor = useRef<TextareaRenderable>(null);
   const loadedInitialContent = useRef(false);
   const [dirty, setDirty] = useState(false);
@@ -60,22 +61,22 @@ export function TextEditor({ appId, onScrollStateChange }: AppComponentProps) {
   }, [onScrollStateChange]);
 
   return (
-    <box flexGrow={1} flexDirection="column" backgroundColor={lofiColors.background}>
+    <box flexGrow={1} flexDirection="column" backgroundColor={colors.background}>
       <textarea
         ref={editor}
         focused={focused}
         flexGrow={1}
         initialValue={STARTER_DOCUMENT}
-        backgroundColor={lofiColors.background}
-        focusedBackgroundColor={lofiColors.background}
-        textColor={lofiColors.glowSoft}
-        focusedTextColor={lofiColors.glowSoft}
-        cursorColor={lofiColors.accent}
-        selectionBg={lofiColors.border}
-        selectionFg={lofiColors.white}
+        backgroundColor={colors.background}
+        focusedBackgroundColor={colors.background}
+        textColor={colors.glowSoft}
+        focusedTextColor={colors.glowSoft}
+        cursorColor={colors.accent}
+        selectionBg={colors.border}
+        selectionFg={colors.white}
         wrapMode="word"
         placeholder="Start writing..."
-        placeholderColor={lofiColors.muted}
+        placeholderColor={colors.muted}
         onContentChange={() => {
           if (loadedInitialContent.current) setDirty(true);
           else loadedInitialContent.current = true;

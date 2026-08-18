@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Desktop } from "./desktop/desktop";
 import { OpenTui, OpenTuiLive } from "./runtime/open-tui";
 import { BootScreen } from "./ui/boot-screen";
+import { ThemeProvider } from "./ui/theme";
 
 function LofiFm() {
   const [booted, setBooted] = useState(false);
@@ -21,7 +22,9 @@ const program = Effect.gen(function* () {
 
   yield* openTui.mount(
     <RegistryContext.Provider value={registry}>
-      <LofiFm />
+      <ThemeProvider>
+        <LofiFm />
+      </ThemeProvider>
     </RegistryContext.Provider>,
   );
 
