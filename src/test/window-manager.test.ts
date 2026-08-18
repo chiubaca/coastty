@@ -7,7 +7,6 @@ import { HashMap, Option } from "effect";
 import { createElement } from "react";
 import { WindowFrame } from "../desktop/window-frame";
 import type { AppManifest } from "../apps/types";
-import { actionStatusAtom, DEFAULT_ACTION_STATUS } from "../desktop/action-status";
 import {
   initialWindowManagerState,
   reduceWindowManager,
@@ -108,18 +107,6 @@ describe("window manager", () => {
       expect(focusedValues).toEqual([false, true, false]);
     } finally {
       unsubscribe();
-      registry.dispose();
-    }
-  });
-
-  test("action status is shared through the atom registry", () => {
-    const registry = Registry.make();
-
-    try {
-      expect(registry.get(actionStatusAtom)).toBe(DEFAULT_ACTION_STATUS);
-      registry.set(actionStatusAtom, "DRAG TO REPOSITION");
-      expect(registry.get(actionStatusAtom)).toBe("DRAG TO REPOSITION");
-    } finally {
       registry.dispose();
     }
   });

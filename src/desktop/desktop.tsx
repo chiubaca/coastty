@@ -1,11 +1,10 @@
 import { TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
 import { apps } from "../apps/registry";
-import { ActionStatus, actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
 
@@ -16,14 +15,9 @@ export function Desktop() {
   const [selectedAppId, setSelectedAppId] = useState(apps[0]?.id ?? "");
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
   const [lastClick, setLastClick] = useState({ appId: "", at: 0 });
-  const setAction = useAtomSet(actionStatusAtom);
   const windows = useAtomValue(windowsAtom);
   const focusedAppId = useAtomValue(focusedAppIdAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
-
-  useEffect(() => {
-    setAction(DEFAULT_ACTION_STATUS);
-  }, [selectedAppId, setAction]);
 
   function activate(appId: string) {
     const app = apps.find((candidate) => candidate.id === appId);
@@ -106,7 +100,6 @@ export function Desktop() {
           ))}
         </box>
       )}
-      <ActionStatus />
     </box>
   );
 }

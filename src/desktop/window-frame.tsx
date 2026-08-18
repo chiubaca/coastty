@@ -3,7 +3,6 @@ import { createElement, useRef, useState } from "react";
 import { useRenderer } from "@opentui/react";
 import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppManifest, AppScrollState } from "../apps/types";
-import { actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
 import { LofiText } from "../ui/lofi-text";
 
@@ -17,7 +16,6 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const [isScrollbarDragging, setIsScrollbarDragging] = useState(false);
   const [scrollState, setScrollState] = useState<AppScrollState | null>(null);
   const renderer = useRenderer();
-  const setAction = useAtomSet(actionStatusAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
   const maxLeft = Math.max(0, viewport.width - app.initialSize.width);
   const maxTop = Math.max(1, viewport.height - 2);
@@ -77,12 +75,10 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           backgroundColor={isDragging ? "#39ff14" : isTitleHovered ? "#0c7a22" : "#145c22"}
           onMouseOver={() => {
             setIsTitleHovered(true);
-            setAction("DRAG TO REPOSITION");
             renderer.setMousePointer("move");
           }}
           onMouseOut={() => {
             if (!isDragging) setIsTitleHovered(false);
-            if (!isDragging) setAction(DEFAULT_ACTION_STATUS);
             renderer.setMousePointer("default");
           }}
           onMouseDown={(event) => {
