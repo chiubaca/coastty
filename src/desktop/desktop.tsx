@@ -5,15 +5,21 @@ import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
 import { apps } from "../apps/registry";
+import { LofiText } from "../ui/lofi-text";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
 
 const DOUBLE_CLICK_MS = 350;
 
-export function Desktop() {
+type DesktopProps = {
+  readonly onRestart: () => void;
+};
+
+export function Desktop({ onRestart }: DesktopProps) {
   const { width, height } = useTerminalDimensions();
   const [selectedAppId, setSelectedAppId] = useState(apps[0]?.id ?? "");
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
+  const [restartHovered, setRestartHovered] = useState(false);
   const [lastClick, setLastClick] = useState({ appId: "", at: 0 });
   const windows = useAtomValue(windowsAtom);
   const focusedAppId = useAtomValue(focusedAppIdAtom);
@@ -49,12 +55,30 @@ export function Desktop() {
 
   return (
     <box backgroundColor="#000000" flexGrow={1}>
-      <box height={1} paddingX={1} justifyContent="space-between" backgroundColor="#ffffff">
-        <text selectable={false} fg="#000000" attributes={TextAttributes.BOLD}>[ Apple ]</text>
-        <text selectable={false} fg="#000000">File   Edit   View   Special</text>
-        <text selectable={false} fg="#000000">Monday  9:41 AM</text>
+      <box height={1} paddingX={1} flexDirection="row" backgroundColor="#ffffff">
+        <LofiText fg="#000000" attributes={TextAttributes.BOLD}>[ Apple ]</LofiText>
+        <LofiText fg="#000000">File   Edit   View   Special</LofiText>
+        <box flexDirection="row" gap={2} marginLeft="auto">
+          <LofiText fg="#000000">Monday  9:41 AM</LofiText>
+          <box
+            width={9}
+            height={1}
+            justifyContent="center"
+            backgroundColor={restartHovered ? "#000000" : "#ffffff"}
+            onMouseOver={() => setRestartHovered(true)}
+            onMouseOut={() => setRestartHovered(false)}
+            onMouseDown={onRestart}
+          >
+            <LofiText
+              fg={restartHovered ? "#7cff5b" : "#000000"}
+              attributes={TextAttributes.BOLD}
+            >
+              [Restart]
+            </LofiText>
+          </box>
+        </box>
       </box>
-      <text selectable={false} position="absolute" left={3} top={2} fg="#ffffff" attributes={TextAttributes.DIM}>Macintosh HD</text>
+      <LofiText position="absolute" left={3} top={2} fg="#ffffff" attributes={TextAttributes.DIM}>Macintosh HD</LofiText>
 
       {apps.map((app, index) => {
         const selected = app.id === selectedAppId;
@@ -78,8 +102,8 @@ export function Desktop() {
               setLastClick({ appId: app.id, at: now });
             }}
           >
-            <text selectable={false} fg="#000000" attributes={TextAttributes.BOLD}>{app.icon}</text>
-            <text selectable={false} fg="#000000"> {app.title} </text>
+            <LofiText fg="#000000" attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
+            <LofiText fg="#000000"> {app.title} </LofiText>
           </box>
         );
       })}
@@ -95,7 +119,7 @@ export function Desktop() {
         <box position="absolute" left={0} right={0} bottom={0} height={3} paddingX={1} flexDirection="row" alignItems="center" gap={1} border borderColor="#ffffff">
           {minimizedApps.map((app) => (
             <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor="#ffffff" onMouseDown={() => dispatchWindow(WindowCommand.Restore({ appId: app.id }))}>
-              <text selectable={false} fg="#000000">{app.title}</text>
+              <LofiText fg="#000000">{app.title}</LofiText>
             </box>
           ))}
         </box>
