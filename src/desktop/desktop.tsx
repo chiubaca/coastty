@@ -8,7 +8,6 @@ import { apps } from "../apps/registry";
 import { ActionStatus, actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
-import { LofiText } from "../ui/lofi-text";
 
 const DOUBLE_CLICK_MS = 350;
 
@@ -57,11 +56,11 @@ export function Desktop() {
   return (
     <box backgroundColor="#000000" flexGrow={1}>
       <box height={1} paddingX={1} justifyContent="space-between" backgroundColor="#ffffff">
-        <LofiText fg="#000000" attributes={TextAttributes.BOLD}>[ Apple ]</LofiText>
-        <LofiText fg="#000000">File   Edit   View   Special</LofiText>
-        <LofiText fg="#000000">Monday  9:41 AM</LofiText>
+        <text selectable={false} fg="#000000" attributes={TextAttributes.BOLD}>[ Apple ]</text>
+        <text selectable={false} fg="#000000">File   Edit   View   Special</text>
+        <text selectable={false} fg="#000000">Monday  9:41 AM</text>
       </box>
-      <LofiText position="absolute" left={3} top={2} fg="#ffffff" attributes={TextAttributes.DIM}>Macintosh HD</LofiText>
+      <text selectable={false} position="absolute" left={3} top={2} fg="#ffffff" attributes={TextAttributes.DIM}>Macintosh HD</text>
 
       {apps.map((app, index) => {
         const selected = app.id === selectedAppId;
@@ -85,8 +84,8 @@ export function Desktop() {
               setLastClick({ appId: app.id, at: now });
             }}
           >
-            <LofiText fg="#000000" attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
-            <LofiText fg="#000000"> {app.title} </LofiText>
+            <text selectable={false} fg="#000000" attributes={TextAttributes.BOLD}>{app.icon}</text>
+            <text selectable={false} fg="#000000"> {app.title} </text>
           </box>
         );
       })}
@@ -102,7 +101,7 @@ export function Desktop() {
         <box position="absolute" left={0} right={0} bottom={0} height={3} paddingX={1} flexDirection="row" alignItems="center" gap={1} border borderColor="#ffffff">
           {minimizedApps.map((app) => (
             <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor="#ffffff" onMouseDown={() => dispatchWindow(WindowCommand.Restore({ appId: app.id }))}>
-              <LofiText fg="#000000">{app.title}</LofiText>
+              <text selectable={false} fg="#000000">{app.title}</text>
             </box>
           ))}
         </box>

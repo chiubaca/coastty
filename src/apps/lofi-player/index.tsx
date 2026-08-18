@@ -8,7 +8,7 @@ export function LofiPlayer({ appId }: AppComponentProps) {
   const dispatchWindow = useAtomSet(windowManagerAtom);
 
   return (
-    <box padding={2} flexGrow={1} flexDirection="column" gap={1}>
+    <box flexGrow={1} flexDirection="column" gap={1}>
       <box
         onMouseDown={() =>
           dispatchWindow(WindowCommand.SetTitle({ appId, title: "lofi.fm - Night Bus Radio" }))

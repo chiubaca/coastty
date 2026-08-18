@@ -91,7 +91,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
             setIsDragging(true);
           }}
         >
-          <box height={1} paddingX={1} flexDirection="row" alignItems="center">
+          <box  flexDirection="row" alignItems="center">
             <box flexGrow={1} height={1} alignItems="center" justifyContent="center">
               <LofiText fg={isDragging ? "#000d04" : "#7cff5b"} attributes={TextAttributes.BOLD}>{window.title}</LofiText>
             </box>
@@ -101,7 +101,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
             }}>
               <LofiText fg="#7cff5b" attributes={TextAttributes.BOLD}>[_]</LofiText>
             </box>
-            <box width={4} height={1} marginLeft={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
+            <box  height={1}  backgroundColor="#062b0d" onMouseDown={(event) => {
               event.stopPropagation();
               dispatchWindow(WindowCommand.Close({ appId: app.id }));
             }}>

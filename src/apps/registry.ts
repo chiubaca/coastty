@@ -18,7 +18,7 @@ export const apps: AppManifest[] = [
     icon: appIcon({ glyph: "file", fallback: "#" }),
     initialPosition: { left: 16, top: 4 },
     initialSize: { width: 62, height: 22 },
-    contentPadding: 0,
+    contentPadding: 1,
     Component: TextEditor,
   },
 ];
