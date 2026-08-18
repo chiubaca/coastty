@@ -2,7 +2,7 @@ import { TextAttributes } from "@opentui/core";
 import { createElement, useRef, useState } from "react";
 import { useRenderer } from "@opentui/react";
 import { useAtomSet } from "@effect-atom/atom-react/Hooks";
-import type { AppManifest } from "../apps/types";
+import type { AppManifest, AppScrollState } from "../apps/types";
 import { actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
 import { LofiText } from "../ui/lofi-text";
@@ -13,6 +13,9 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const dragOffset = useRef<{ left: number; top: number } | null>(null);
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isScrollbarHovered, setIsScrollbarHovered] = useState(false);
+  const [isScrollbarDragging, setIsScrollbarDragging] = useState(false);
+  const [scrollState, setScrollState] = useState<AppScrollState | null>(null);
   const renderer = useRenderer();
   const setAction = useAtomSet(actionStatusAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
@@ -20,6 +23,15 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const maxTop = Math.max(1, viewport.height - 2);
   const left = Math.min(window.left, maxLeft);
   const top = Math.min(window.top, maxTop);
+  const hasOverflow = scrollState !== null && scrollState.size > scrollState.viewportSize;
+  const trackHeight = app.initialSize.height - 5;
+  const thumbHeight = hasOverflow
+    ? Math.max(1, Math.min(trackHeight, Math.round((scrollState.viewportSize / scrollState.size) * trackHeight)))
+    : 0;
+  const maxScroll = hasOverflow ? scrollState.size - scrollState.viewportSize : 0;
+  const thumbTop = hasOverflow && maxScroll > 0
+    ? Math.round((scrollState.position / maxScroll) * (trackHeight - thumbHeight))
+    : 0;
 
   function moveTo(x: number, y: number) {
     dispatchWindow(
@@ -48,6 +60,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       onMouseDragEnd={() => {
         dragOffset.current = null;
         setIsDragging(false);
+        setIsScrollbarDragging(false);
       }}
     >
       <box
@@ -97,15 +110,42 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
         </box>
         <box flexGrow={1} flexDirection="row">
           <box flexGrow={1} padding={1}>
-            {createElement(app.Component, { appId: app.id })}
+            {createElement(app.Component, { appId: app.id, onScrollStateChange: setScrollState })}
           </box>
-          <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
-            <box flexGrow={1} width={1} backgroundColor="#0c7a22" flexDirection="column">
-              <box width={1} height={3} alignItems="center" justifyContent="center" backgroundColor="#39ff14">
-                <LofiText fg="#062b0d">▓</LofiText>
-              </box>
+          {hasOverflow && <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
+            <box
+              height={trackHeight}
+              width={1}
+              backgroundColor="#031807"
+              flexDirection="column"
+              onMouseDown={(event) => {
+                const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 3)));
+                const position = Math.round((relativeY / Math.max(1, trackHeight - 1)) * maxScroll);
+                scrollState.scrollTo(position);
+              }}
+            >
+              <box
+                width={1}
+                height={thumbHeight}
+                marginTop={thumbTop}
+                backgroundColor={isScrollbarDragging ? "#39ff14" : isScrollbarHovered ? "#0c7a22" : "#145c22"}
+                onMouseOver={() => {
+                  setIsScrollbarHovered(true);
+                  renderer.setMousePointer("move");
+                }}
+                onMouseOut={() => {
+                  if (!isScrollbarDragging) setIsScrollbarHovered(false);
+                  renderer.setMousePointer("default");
+                }}
+                onMouseDown={() => setIsScrollbarDragging(true)}
+                onMouseDrag={(event) => {
+                  const relativeY = Math.max(0, Math.min(trackHeight - thumbHeight, event.y - (top + 3)));
+                  const position = Math.round((relativeY / Math.max(1, trackHeight - thumbHeight)) * maxScroll);
+                  scrollState.scrollTo(position);
+                }}
+              />
             </box>
-          </box>
+          </box>}
         </box>
       </box>
     </box>
