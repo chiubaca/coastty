@@ -5,6 +5,7 @@ import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppManifest } from "../apps/types";
 import { actionStatusAtom, DEFAULT_ACTION_STATUS } from "./action-status";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
+import { LofiText } from "../ui/lofi-text";
 
 type Viewport = { width: number; height: number };
 
@@ -78,19 +79,19 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
         >
           <box height={1} paddingX={1} flexDirection="row" alignItems="center">
             <box flexGrow={1} height={1} alignItems="center" justifyContent="center">
-              <text fg={isDragging ? "#000d04" : "#7cff5b"} attributes={TextAttributes.BOLD}>{window.title}</text>
+              <LofiText fg={isDragging ? "#000d04" : "#7cff5b"} attributes={TextAttributes.BOLD}>{window.title}</LofiText>
             </box>
             <box width={4} height={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
               event.stopPropagation();
               dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
             }}>
-              <text fg="#7cff5b" attributes={TextAttributes.BOLD}>[_]</text>
+              <LofiText fg="#7cff5b" attributes={TextAttributes.BOLD}>[_]</LofiText>
             </box>
             <box width={4} height={1} marginLeft={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
               event.stopPropagation();
               dispatchWindow(WindowCommand.Close({ appId: app.id }));
             }}>
-              <text fg="#7cff5b" attributes={TextAttributes.BOLD}>[X]</text>
+              <LofiText fg="#7cff5b" attributes={TextAttributes.BOLD}>[X]</LofiText>
             </box>
           </box>
         </box>
@@ -101,7 +102,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
             <box flexGrow={1} width={1} backgroundColor="#0c7a22" flexDirection="column">
               <box width={1} height={3} alignItems="center" justifyContent="center" backgroundColor="#39ff14">
-                <text fg="#062b0d">▓</text>
+                <LofiText fg="#062b0d">▓</LofiText>
               </box>
             </box>
           </box>

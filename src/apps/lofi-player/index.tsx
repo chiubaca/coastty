@@ -2,6 +2,7 @@ import { TextAttributes } from "@opentui/core";
 import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppComponentProps } from "../types";
 import { windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
+import { LofiText } from "../../ui/lofi-text";
 
 export function LofiPlayer({ appId }: AppComponentProps) {
   const dispatchWindow = useAtomSet(windowManagerAtom);
@@ -13,11 +14,11 @@ export function LofiPlayer({ appId }: AppComponentProps) {
           dispatchWindow(WindowCommand.SetTitle({ appId, title: "lofi.fm - Night Bus Radio" }))
         }
       >
-        <text fg="#ffffff" attributes={TextAttributes.BOLD}>Night Bus Radio</text>
+        <LofiText fg="#ffffff" attributes={TextAttributes.BOLD}>Night Bus Radio</LofiText>
       </box>
-      <text fg="#ffffff">rain on glass / side a</text>
-      <text fg="#ffffff">[======----------]  2:14</text>
-      <text fg="#ffffff" attributes={TextAttributes.DIM}>Click the station name to update the window title.</text>
+      <LofiText fg="#ffffff">rain on glass / side a</LofiText>
+      <LofiText fg="#ffffff">[======----------]  2:14</LofiText>
+      <LofiText fg="#ffffff" attributes={TextAttributes.DIM}>Click the station name to update the window title.</LofiText>
     </box>
   );
 }

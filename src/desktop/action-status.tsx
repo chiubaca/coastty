@@ -1,5 +1,6 @@
 import * as Atom from "@effect-atom/atom/Atom";
 import { useAtomValue } from "@effect-atom/atom-react/Hooks";
+import { LofiText } from "../ui/lofi-text";
 
 export const DEFAULT_ACTION_STATUS = "DOUBLE CLICK TO OPEN";
 
@@ -13,7 +14,7 @@ export function ActionStatus() {
 
   return (
     <box position="absolute" right={1} bottom={1} zIndex={1000} height={1} paddingX={1} border borderColor="#39ff14" backgroundColor="#000d04">
-      <text fg="#7cff5b">{action}</text>
+      <LofiText fg="#7cff5b">{action}</LofiText>
     </box>
   );
 }
