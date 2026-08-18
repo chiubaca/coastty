@@ -5,6 +5,7 @@ import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppManifest, AppScrollState } from "../apps/types";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
 import { LofiText } from "../ui/lofi-text";
+import { lofiColors } from "../ui/theme";
 
 type Viewport = { width: number; height: number };
 
@@ -50,7 +51,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       width={app.initialSize.width}
       height={app.initialSize.height}
       zIndex={window.zIndex}
-      backgroundColor="#000000"
+      backgroundColor={lofiColors.background}
       flexDirection="column"
       onMouseDown={() => dispatchWindow(WindowCommand.Focus({ appId: app.id }))}
       onMouseDrag={(event) => {
@@ -66,13 +67,13 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
         flexGrow={1}
         border
         borderStyle="single"
-        borderColor="#39ff14"
-        backgroundColor="#000d04"
+        borderColor={lofiColors.accent}
+        backgroundColor={lofiColors.background}
         flexDirection="column"
       >
         <box
           height={1}
-          backgroundColor={isDragging ? "#39ff14" : isTitleHovered ? "#0c7a22" : "#145c22"}
+          backgroundColor={isDragging ? lofiColors.accent : isTitleHovered ? lofiColors.secondary : lofiColors.border}
           onMouseOver={() => {
             setIsTitleHovered(true);
             renderer.setMousePointer("move");
@@ -89,19 +90,19 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
         >
           <box  flexDirection="row" alignItems="center">
             <box flexGrow={1} height={1} alignItems="center" justifyContent="center">
-              <LofiText fg={isDragging ? "#000d04" : "#7cff5b"} attributes={TextAttributes.BOLD}>{window.title}</LofiText>
+              <LofiText fg={isDragging ? lofiColors.background : lofiColors.accent} attributes={TextAttributes.BOLD}>{window.title}</LofiText>
             </box>
-            <box width={4} height={1} alignItems="center" justifyContent="center" backgroundColor="#062b0d" onMouseDown={(event) => {
+            <box width={4} height={1} alignItems="center" justifyContent="center" backgroundColor={lofiColors.shadow} onMouseDown={(event) => {
               event.stopPropagation();
               dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
             }}>
-              <LofiText fg="#7cff5b" attributes={TextAttributes.BOLD}>[_]</LofiText>
+              <LofiText fg={lofiColors.accent} attributes={TextAttributes.BOLD}>[_]</LofiText>
             </box>
-            <box  height={1}  backgroundColor="#062b0d" onMouseDown={(event) => {
+            <box  height={1}  backgroundColor={lofiColors.shadow} onMouseDown={(event) => {
               event.stopPropagation();
               dispatchWindow(WindowCommand.Close({ appId: app.id }));
             }}>
-              <LofiText fg="#7cff5b" attributes={TextAttributes.BOLD}>[X]</LofiText>
+              <LofiText fg={lofiColors.accent} attributes={TextAttributes.BOLD}>[X]</LofiText>
             </box>
           </box>
         </box>
@@ -109,11 +110,11 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           <box flexGrow={1} padding={contentPadding}>
             {createElement(app.Component, { appId: app.id, onScrollStateChange: setScrollState })}
           </box>
-          {hasOverflow && <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor="#031807">
+          {hasOverflow && <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor={lofiColors.shadow}>
             <box
               height={trackHeight}
               width={1}
-              backgroundColor="#031807"
+              backgroundColor={lofiColors.shadow}
               flexDirection="column"
               onMouseDown={(event) => {
                 const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 2 + contentPadding)));
@@ -125,7 +126,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
                 width={1}
                 height={thumbHeight}
                 marginTop={thumbTop}
-                backgroundColor={isScrollbarDragging ? "#39ff14" : isScrollbarHovered ? "#0c7a22" : "#145c22"}
+                backgroundColor={isScrollbarDragging ? lofiColors.accent : isScrollbarHovered ? lofiColors.secondary : lofiColors.border}
                 onMouseOver={() => {
                   setIsScrollbarHovered(true);
                   renderer.setMousePointer("move");

@@ -3,6 +3,7 @@ import type { TextareaRenderable } from "@opentui/core";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import type { AppComponentProps, AppScrollState } from "../types";
 import { windowFocusedAtom, windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
+import { lofiColors } from "../../ui/theme";
 
 const STARTER_DOCUMENT = `Untitled note
 
@@ -59,22 +60,22 @@ export function TextEditor({ appId, onScrollStateChange }: AppComponentProps) {
   }, [onScrollStateChange]);
 
   return (
-    <box flexGrow={1} flexDirection="column" backgroundColor="#000d04">
+    <box flexGrow={1} flexDirection="column" backgroundColor={lofiColors.background}>
       <textarea
         ref={editor}
         focused={focused}
         flexGrow={1}
         initialValue={STARTER_DOCUMENT}
-        backgroundColor="#000d04"
-        focusedBackgroundColor="#000d04"
-        textColor="#d7ffd0"
-        focusedTextColor="#d7ffd0"
-        cursorColor="#39ff14"
-        selectionBg="#145c22"
-        selectionFg="#ffffff"
+        backgroundColor={lofiColors.background}
+        focusedBackgroundColor={lofiColors.background}
+        textColor={lofiColors.glowSoft}
+        focusedTextColor={lofiColors.glowSoft}
+        cursorColor={lofiColors.accent}
+        selectionBg={lofiColors.border}
+        selectionFg={lofiColors.white}
         wrapMode="word"
         placeholder="Start writing..."
-        placeholderColor="#3e9b4e"
+        placeholderColor={lofiColors.muted}
         onContentChange={() => {
           if (loadedInitialContent.current) setDirty(true);
           else loadedInitialContent.current = true;

@@ -6,6 +6,7 @@ import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
 import { apps } from "../apps/registry";
 import { LofiText } from "../ui/lofi-text";
+import { lofiColors } from "../ui/theme";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
 
@@ -54,23 +55,23 @@ export function Desktop({ onRestart }: DesktopProps) {
   );
 
   return (
-    <box backgroundColor="#000000" flexGrow={1}>
-      <box height={1} paddingX={1} flexDirection="row" backgroundColor="#ffffff">
-        <LofiText fg="#000000" attributes={TextAttributes.BOLD}>[ Apple ]</LofiText>
-        <LofiText fg="#000000">File   Edit   View   Special</LofiText>
+    <box backgroundColor={lofiColors.background} flexGrow={1}>
+      <box height={1} paddingX={1} flexDirection="row" backgroundColor={lofiColors.highlight}>
+        <LofiText fg={lofiColors.background} attributes={TextAttributes.BOLD}>[ Apple ]</LofiText>
+        <LofiText fg={lofiColors.background}>File   Edit   View   Special</LofiText>
         <box flexDirection="row" gap={2} marginLeft="auto">
-          <LofiText fg="#000000">Monday  9:41 AM</LofiText>
+          <LofiText fg={lofiColors.background}>Monday  9:41 AM</LofiText>
           <box
             width={9}
             height={1}
             justifyContent="center"
-            backgroundColor={restartHovered ? "#000000" : "#ffffff"}
+            backgroundColor={restartHovered ? lofiColors.background : lofiColors.highlight}
             onMouseOver={() => setRestartHovered(true)}
             onMouseOut={() => setRestartHovered(false)}
             onMouseDown={onRestart}
           >
             <LofiText
-              fg={restartHovered ? "#7cff5b" : "#000000"}
+              fg={restartHovered ? lofiColors.accent : lofiColors.background}
               attributes={TextAttributes.BOLD}
             >
               [Restart]
@@ -78,7 +79,7 @@ export function Desktop({ onRestart }: DesktopProps) {
           </box>
         </box>
       </box>
-      <LofiText position="absolute" left={3} top={2} fg="#ffffff" attributes={TextAttributes.DIM}>Macintosh HD</LofiText>
+      <LofiText position="absolute" left={3} top={2} fg={lofiColors.glowSoft} attributes={TextAttributes.DIM}>Macintosh HD</LofiText>
 
       {apps.map((app, index) => {
         const selected = app.id === selectedAppId;
@@ -92,7 +93,7 @@ export function Desktop({ onRestart }: DesktopProps) {
             width={app.title.length + 2}
             height={2}
             alignItems="center"
-            backgroundColor={selected ? "#7cff5b" : hovered ? "#e0e0e0" : "#b8b8b8"}
+            backgroundColor={selected ? lofiColors.accent : hovered ? lofiColors.highlight : lofiColors.primary}
             onMouseOver={() => setHoveredAppId(app.id)}
             onMouseOut={() => setHoveredAppId(null)}
             onMouseDown={() => {
@@ -102,8 +103,8 @@ export function Desktop({ onRestart }: DesktopProps) {
               setLastClick({ appId: app.id, at: now });
             }}
           >
-            <LofiText fg="#000000" attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
-            <LofiText fg="#000000"> {app.title} </LofiText>
+            <LofiText fg={lofiColors.background} attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
+            <LofiText fg={lofiColors.background}> {app.title} </LofiText>
           </box>
         );
       })}
@@ -116,10 +117,10 @@ export function Desktop({ onRestart }: DesktopProps) {
       })}
 
       {minimizedApps.length > 0 && (
-        <box position="absolute" left={0} right={0} bottom={0} height={3} paddingX={1} flexDirection="row" alignItems="center" gap={1} border borderColor="#ffffff">
+        <box position="absolute" left={0} right={0} bottom={0} height={3} paddingX={1} flexDirection="row" alignItems="center" gap={1} border borderColor={lofiColors.highlight}>
           {minimizedApps.map((app) => (
-            <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor="#ffffff" onMouseDown={() => dispatchWindow(WindowCommand.Restore({ appId: app.id }))}>
-              <LofiText fg="#000000">{app.title}</LofiText>
+            <box key={app.id} width={18} height={1} alignItems="center" justifyContent="center" backgroundColor={lofiColors.highlight} onMouseDown={() => dispatchWindow(WindowCommand.Restore({ appId: app.id }))}>
+              <LofiText fg={lofiColors.background}>{app.title}</LofiText>
             </box>
           ))}
         </box>

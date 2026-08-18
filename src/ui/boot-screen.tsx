@@ -2,6 +2,7 @@ import { TextAttributes } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState } from "react";
 import { LofiText } from "./lofi-text";
+import { lofiColors } from "./theme";
 
 export const BOOT_TITLE = "///////// LOFI.FM ////////////";
 
@@ -25,7 +26,7 @@ export const BOOT_DURATION_MS = GLOW_START_MS + GLOW_DURATION_MS;
 
 const TITLE_BRAND_START = BOOT_TITLE.indexOf("LOFI.FM");
 const TITLE_BRAND_END = TITLE_BRAND_START + "LOFI.FM".length;
-const GLOW_COLORS = ["#7cffc9", "#b9ffe8", "#ffffff", "#d8fff2"] as const;
+const GLOW_COLORS = [lofiColors.accent, lofiColors.glow, lofiColors.white, lofiColors.glowSoft] as const;
 const SPINNER = ["-", "\\", "|", "/"] as const;
 
 export type BootFrame = {
@@ -83,12 +84,12 @@ export function BootScreen({ onComplete }: BootScreenProps) {
   }, [onComplete]);
 
   return (
-    <box flexGrow={1} backgroundColor="#020706">
+    <box flexGrow={1} backgroundColor={lofiColors.background}>
       <box position="absolute" top={1} right={compact ? 1 : 3} width={18}>
-        <LofiText fg="#24594e">+----------------+</LofiText>
-        <LofiText fg="#7cffc9" attributes={TextAttributes.BOLD}>| [] LOFI.FM    |</LofiText>
-        <LofiText fg="#4ba58e">|    FM/OS  95  |</LofiText>
-        <LofiText fg="#24594e">+----------------+</LofiText>
+        <LofiText fg={lofiColors.border}>+----------------+</LofiText>
+        <LofiText fg={lofiColors.accent} attributes={TextAttributes.BOLD}>| [] LOFI.FM    |</LofiText>
+        <LofiText fg={lofiColors.secondary}>|    FM/OS  95  |</LofiText>
+        <LofiText fg={lofiColors.border}>+----------------+</LofiText>
       </box>
 
       {elapsedMs < TITLE_START_MS ? (
@@ -96,7 +97,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
           {BIOS_LINES.slice(0, frame.biosLineCount).map((line, index) => (
             <LofiText
               key={line}
-              fg={index === frame.biosLineCount - 1 ? "#a5ffe6" : "#5db49d"}
+              fg={index === frame.biosLineCount - 1 ? lofiColors.highlight : lofiColors.primary}
               attributes={index === 0 ? TextAttributes.BOLD : undefined}
             >
               {line}
@@ -108,15 +109,15 @@ export function BootScreen({ onComplete }: BootScreenProps) {
           <box height={3} width={BOOT_TITLE.length}>
             {isGlowing && (
               <>
-                <LofiText position="absolute" top={0} fg="#174b40" attributes={TextAttributes.DIM}>
+                <LofiText position="absolute" top={0} fg={lofiColors.shadow} attributes={TextAttributes.DIM}>
                   {BOOT_TITLE}
                 </LofiText>
-                <LofiText position="absolute" top={2} fg="#174b40" attributes={TextAttributes.DIM}>
+                <LofiText position="absolute" top={2} fg={lofiColors.shadow} attributes={TextAttributes.DIM}>
                   {BOOT_TITLE}
                 </LofiText>
               </>
             )}
-            <LofiText position="absolute" top={1} fg="#3a806f">
+            <LofiText position="absolute" top={1} fg={lofiColors.subdued}>
               <span>{prefix}</span>
               <span fg={glowColor} attributes={TextAttributes.BOLD}>{brand}</span>
               <span>{suffix}</span>
@@ -125,7 +126,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
         </box>
       )}
 
-      <LofiText position="absolute" left={compact ? 2 : 4} bottom={2} fg="#356c5e" attributes={TextAttributes.DIM}>
+      <LofiText position="absolute" left={compact ? 2 : 4} bottom={2} fg={lofiColors.muted} attributes={TextAttributes.DIM}>
         {elapsedMs < TITLE_START_MS ? `${spinner} BOOTING FROM LOFI DISK` : "SIGNAL LOCKED // ENTERING DESKTOP"}
       </LofiText>
     </box>
