@@ -3,6 +3,7 @@ import { createElement, useRef, useState } from "react";
 import { useRenderer } from "@opentui/react";
 import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppManifest, AppScrollState } from "../apps/types";
+import { usePlaybackLifecycle } from "../radio/playback-lifecycle";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
 import { LofiText } from "../ui/lofi-text";
 import { useTheme } from "../ui/theme";
@@ -19,6 +20,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const [scrollState, setScrollState] = useState<AppScrollState | null>(null);
   const renderer = useRenderer();
   const dispatchWindow = useAtomSet(windowManagerAtom);
+  const playbackLifecycle = usePlaybackLifecycle();
   const maxLeft = Math.max(0, viewport.width - app.initialSize.width);
   const maxTop = Math.max(1, viewport.height - 2);
   const left = Math.min(window.left, maxLeft);
@@ -101,7 +103,10 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
             </box>
             <box  height={1}  backgroundColor={colors.shadow} onMouseDown={(event) => {
               event.stopPropagation();
-              dispatchWindow(WindowCommand.Close({ appId: app.id }));
+              playbackLifecycle.pauseBeforeAppClose(
+                app.id,
+                () => dispatchWindow(WindowCommand.Close({ appId: app.id })),
+              );
             }}>
               <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[X]</LofiText>
             </box>

@@ -1,11 +1,11 @@
-import { Audio, TextAttributes } from "@opentui/core";
+import { TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
-import openingSoundPath from "../assets/opening.mp3" with { type: "file" };
 import { apps } from "../apps/registry";
+import { usePlaybackLifecycle } from "../radio/playback-lifecycle";
 import { LofiText } from "../ui/lofi-text";
 import { useTheme } from "../ui/theme";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
@@ -29,30 +29,7 @@ export function Desktop({ onRestart }: DesktopProps) {
   const windows = useAtomValue(windowsAtom);
   const focusedAppId = useAtomValue(focusedAppIdAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
-
-  useEffect(() => {
-    let audio: Audio;
-    let cancelled = false;
-
-    try {
-      audio = Audio.create({ autoStart: false });
-    } catch {
-      return;
-    }
-
-    audio.on("error", () => {});
-    void audio.loadSoundFile(openingSoundPath)
-      .then((sound) => {
-        if (cancelled || sound === null) return;
-        if (audio.start()) audio.play(sound, { loop: false });
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-      audio.dispose();
-    };
-  }, []);
+  const playbackLifecycle = usePlaybackLifecycle();
 
   function activate(appId: string) {
     const app = apps.find((candidate) => candidate.id === appId);
@@ -112,7 +89,7 @@ export function Desktop({ onRestart }: DesktopProps) {
             backgroundColor={restartHovered ? colors.background : colors.highlight}
             onMouseOver={() => setRestartHovered(true)}
             onMouseOut={() => setRestartHovered(false)}
-            onMouseDown={onRestart}
+            onMouseDown={() => playbackLifecycle.pauseBeforeRestart(onRestart)}
           >
             <LofiText
               fg={restartHovered ? colors.accent : colors.background}
