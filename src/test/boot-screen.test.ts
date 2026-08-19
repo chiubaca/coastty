@@ -16,7 +16,7 @@ describe("getBootFrame", () => {
     expect(BOOT_TITLE.slice(0, laterTitleFrame.titleCharacterCount)).toBe("////////// ");
   });
 
-  test("finishes only after the glitch sequence", () => {
+  test("finishes after the title glow", () => {
     expect(getBootFrame(BOOT_DURATION_MS - 1).complete).toBe(false);
     expect(getBootFrame(BOOT_DURATION_MS).complete).toBe(true);
   });
