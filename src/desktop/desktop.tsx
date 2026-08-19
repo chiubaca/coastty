@@ -1,9 +1,10 @@
-import { TextAttributes } from "@opentui/core";
+import { Audio, TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
+import openingSoundPath from "../assets/opening.mp3" with { type: "file" };
 import { apps } from "../apps/registry";
 import { LofiText } from "../ui/lofi-text";
 import { useTheme } from "../ui/theme";
@@ -28,6 +29,30 @@ export function Desktop({ onRestart }: DesktopProps) {
   const windows = useAtomValue(windowsAtom);
   const focusedAppId = useAtomValue(focusedAppIdAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
+
+  useEffect(() => {
+    let audio: Audio;
+    let cancelled = false;
+
+    try {
+      audio = Audio.create({ autoStart: false });
+    } catch {
+      return;
+    }
+
+    audio.on("error", () => {});
+    void audio.loadSoundFile(openingSoundPath)
+      .then((sound) => {
+        if (cancelled || sound === null) return;
+        if (audio.start()) audio.play(sound, { loop: false });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      audio.dispose();
+    };
+  }, []);
 
   function activate(appId: string) {
     const app = apps.find((candidate) => candidate.id === appId);
