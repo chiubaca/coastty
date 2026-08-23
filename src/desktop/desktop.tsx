@@ -10,6 +10,7 @@ import { LofiText } from "../ui/lofi-text";
 import { useTheme } from "../ui/theme";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
+import { DesktopWallpaper } from "./desktop-wallpaper";
 
 const DOUBLE_CLICK_MS = 350;
 
@@ -61,13 +62,14 @@ export function Desktop({ onRestart }: DesktopProps) {
 
   return (
     <box backgroundColor={colors.background} flexGrow={1}>
+      <DesktopWallpaper width={width} height={height} />
       <box height={1} paddingX={1} flexDirection="row" gap={2} backgroundColor={colors.highlight}>
-        <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[ Apple ]</LofiText>
+        <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{width < 20 ? "[A]" : "[ Apple ]"}</LofiText>
         {width >= 68 && <LofiText fg={colors.background}>File   Edit   View   Special</LofiText>}
         <box flexDirection="row" gap={1} marginLeft="auto">
           {width >= 88 && <LofiText fg={colors.background}>Monday  9:41 AM</LofiText>}
-          <box
-            width={12}
+          {width >= 20 && <box
+            width={width < 40 ? 3 : 12}
             height={1}
             justifyContent="center"
             backgroundColor={themeHovered ? colors.background : colors.highlight}
@@ -79,11 +81,11 @@ export function Desktop({ onRestart }: DesktopProps) {
               fg={themeHovered ? colors.glow : colors.background}
               attributes={TextAttributes.BOLD}
             >
-              [{theme.label}]
+              [{width < 40 ? "T" : theme.label}]
             </LofiText>
-          </box>
+          </box>}
           <box
-            width={9}
+            width={width < 40 ? 3 : 9}
             height={1}
             justifyContent="center"
             backgroundColor={restartHovered ? colors.background : colors.highlight}
@@ -95,12 +97,12 @@ export function Desktop({ onRestart }: DesktopProps) {
               fg={restartHovered ? colors.accent : colors.background}
               attributes={TextAttributes.BOLD}
             >
-              [Restart]
+              [{width < 40 ? "R" : "Restart"}]
             </LofiText>
           </box>
         </box>
       </box>
-      <LofiText position="absolute" left={3} top={2} fg={colors.glowSoft} attributes={TextAttributes.DIM}>Macintosh HD</LofiText>
+      {width >= 48 && <LofiText position="absolute" left={3} top={2} fg={colors.glowSoft} bg={colors.background} attributes={TextAttributes.DIM}>Macintosh HD</LofiText>}
 
       {apps.map((app, index) => {
         const selected = app.id === selectedAppId;

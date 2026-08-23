@@ -12,6 +12,11 @@ To run:
 bun dev
 ```
 
+Audius reads work anonymously. Set the optional `AUDIUS_API_KEY` environment
+variable to use a read-only key for higher published limits. Playlist cursors
+are stored under `~/.lofi-fm/playlist-cursors`; set `LOFI_FM_STATE_DIR` to use a
+different device-local cursor directory.
+
 ## Icons
 
 App icons use Nerd Font glyphs from `@kud/glyphs`. Install and select a Nerd Font

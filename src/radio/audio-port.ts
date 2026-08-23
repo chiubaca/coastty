@@ -7,7 +7,19 @@ import type {
   AudioStreamUrlOptions,
 } from "@opentui/core";
 
-export type AudioStreamStats = { readonly state: AudioStreamState };
+export type AudioStreamStats = {
+  readonly state: AudioStreamState;
+  readonly sampleRate: number;
+  readonly channels: number;
+  readonly bufferedFrames: number;
+  readonly capacityFrames: number;
+  readonly bufferedDurationMs: number;
+  readonly bytesReceived: bigint;
+  readonly framesDecoded: bigint;
+  readonly framesPlayed: bigint;
+  readonly underruns: number;
+  readonly reconnectAttempts: number;
+};
 
 export type AudioFailureEvidence = {
   readonly error: Error;
@@ -35,8 +47,36 @@ export interface AudioEnginePort {
   start(): boolean;
   stop(): boolean;
   playStreamUrl(url: string, options: AudioStreamUrlOptions): Promise<AudioStreamPort>;
+  readSpectrum?(bands: number): readonly number[];
   subscribeError(listener: (evidence: AudioFailureEvidence) => void): () => void;
   dispose(): void;
+}
+
+function spectrumFromFrames(frames: Float32Array, bands: number, sampleRate = 48_000) {
+  if (frames.length === 0) return Array<number>(bands).fill(0);
+  const spectrum: number[] = [];
+  const minFrequency = 60;
+  const maxFrequency = 12_000;
+
+  for (let band = 0; band < bands; band += 1) {
+    const progress = bands === 1 ? 0 : band / (bands - 1);
+    const frequency = minFrequency * Math.pow(maxFrequency / minFrequency, progress);
+    const angularStep = 2 * Math.PI * frequency / sampleRate;
+    let real = 0;
+    let imaginary = 0;
+
+    for (let frame = 0; frame < frames.length; frame += 1) {
+      const window = 0.5 - 0.5 * Math.cos(2 * Math.PI * frame / Math.max(1, frames.length - 1));
+      const sample = (frames[frame] ?? 0) * window;
+      real += sample * Math.cos(angularStep * frame);
+      imaginary -= sample * Math.sin(angularStep * frame);
+    }
+
+    const magnitude = 4 * Math.hypot(real, imaginary) / frames.length;
+    spectrum.push(Math.min(1, Math.sqrt(magnitude) * 1.35));
+  }
+
+  return spectrum;
 }
 
 export interface AudioFactory {
@@ -72,10 +112,20 @@ function adaptStream(stream: Awaited<ReturnType<Audio["playStreamUrl"]>>): Audio
 export const openTuiAudioFactory: AudioFactory = {
   create: () => {
     const audio = Audio.create({ autoStart: false });
+    const tapEnabled = audio.enableTap(8_192);
+    let previousSpectrum: readonly number[] = [];
     return {
       start: () => audio.start(),
       stop: () => audio.stop(),
       playStreamUrl: async (url, options) => adaptStream(await audio.playStreamUrl(url, options)),
+      readSpectrum: (bands) => {
+        const tapped = tapEnabled ? audio.readTapFrames(2_048, 1) : null;
+        const next = tapped && tapped.framesRead > 0
+          ? spectrumFromFrames(tapped.frames, bands)
+          : Array<number>(bands).fill(0);
+        previousSpectrum = next.map((value, index) => Math.max(value, (previousSpectrum[index] ?? 0) * 0.72));
+        return previousSpectrum;
+      },
       subscribeError: (listener) => {
         const onError = (error: Error, context: { readonly action: string; readonly status?: number }) => {
           listener({ error, context });
