@@ -8,8 +8,9 @@ export const apps: AppManifest[] = [
     id: "lofi-player",
     title: "lofi.fm",
     icon: appIcon({ glyph: "starter", fallback: ">" }),
-    initialPosition: { left: 24, top: 5 },
-    initialSize: { width: 46, height: 16 },
+    initialPosition: { left: 12, top: 3 },
+    initialSize: { width: 64, height: 22 },
+    contentPadding: 0,
     Component: LofiPlayer,
   },
   {

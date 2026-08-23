@@ -140,6 +140,7 @@ describe("Playable Playlist playback", () => {
     await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
       const playback = yield* makeStreamingAudio({ create: () => engine }, { source, cursorStore });
       yield* waitFor(playback, (snapshot) => snapshot.directory.playlists.every((item) => item.available));
+      expect((yield* SubscriptionRef.get(playback.state)).directory.playlists[0]?.tracks).toHaveLength(10);
 
       yield* playback.dispatchAndWait(PlaybackCommand.Select({ choice: { _tag: "Playlist", id: "upbeat" } }));
       let snapshot = yield* SubscriptionRef.get(playback.state);
@@ -174,6 +175,24 @@ describe("Playable Playlist playback", () => {
       snapshot = yield* waitFor(playback, (state) => state.track?.entryId === manifest("upbeat").entries[1]?.entryId);
       expect(snapshot.track?.title).toBe("Title 1");
       expect(cursorStore.cursors.get("upbeat")?.elapsedSeconds).toBe(0);
+
+      yield* playback.dispatchAndWait(PlaybackCommand.Previous());
+      snapshot = yield* waitFor(playback, (state) => state.track?.entryId === manifest("upbeat").entries[0]?.entryId);
+      expect(snapshot.track?.title).toBe("Title 0");
+
+      const selectedEntry = manifest("upbeat").entries[4]!;
+      yield* playback.dispatchAndWait(PlaybackCommand.SelectTrack({ playlistId: "upbeat", entryId: selectedEntry.entryId }));
+      snapshot = yield* waitFor(playback, (state) => state.track?.entryId === selectedEntry.entryId);
+      expect(snapshot.track?.title).toBe("Title 4");
+
+      const callsBeforeSeek = engine.calls.length;
+      yield* playback.dispatchAndWait(PlaybackCommand.Seek({ positionSeconds: 150 }));
+      snapshot = yield* SubscriptionRef.get(playback.state);
+      expect(snapshot.positionSeconds).toBe(150);
+      expect(snapshot.track?.entryId).toBe(selectedEntry.entryId);
+      expect(cursorStore.cursors.get("upbeat")?.elapsedSeconds).toBe(150);
+      yield* waitFor(playback, () => engine.calls.length > callsBeforeSeek);
+      expect(new Headers(engine.calls.at(-1)?.options.request?.headers).get("Range")).toBe("bytes=1024-");
     })));
   });
 

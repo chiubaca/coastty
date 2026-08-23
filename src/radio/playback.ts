@@ -50,6 +50,14 @@ export type StationChoice = {
   readonly available: true;
 };
 
+export type PlaylistTrack = {
+  readonly entryId: string;
+  readonly trackId: string;
+  readonly artist: string | null;
+  readonly title: string | null;
+  readonly durationSeconds: number;
+};
+
 export type PlaylistChoice = {
   readonly _tag: "Playlist";
   readonly id: PlaylistId;
@@ -59,6 +67,7 @@ export type PlaylistChoice = {
   readonly available: boolean;
   readonly playableEntries: number;
   readonly playableDurationSeconds: number;
+  readonly tracks: readonly PlaylistTrack[];
 };
 
 export type PlaybackChoice = StationChoice | PlaylistChoice;
@@ -78,6 +87,7 @@ export type PlaybackTrack = {
   readonly artist: string | null;
   readonly title: string | null;
   readonly audiusUrl: string | null;
+  readonly durationSeconds: number;
 };
 
 export type PlaybackSnapshot = {
@@ -92,13 +102,18 @@ export type PlaybackSnapshot = {
   readonly attribution: Attribution;
   readonly reconnect: { readonly attempt: number; readonly maxRetries: number; readonly delayMs: number } | null;
   readonly failure: PlaybackFailure | null;
+  readonly spectrum: readonly number[];
+  readonly positionSeconds: number;
 };
 
 export type PlaybackCommand = Data.TaggedEnum<{
   Select: { readonly choice: PlaybackChoiceIdentity };
   Play: {};
   Pause: {};
+  Previous: {};
   Skip: {};
+  SelectTrack: { readonly playlistId: PlaylistId; readonly entryId: string };
+  Seek: { readonly positionSeconds: number };
   SetVolume: { readonly volume: number };
 }>;
 
@@ -135,6 +150,7 @@ function emptyPlaylistChoice(playlist: PlaylistDefinition): PlaylistChoice {
     available: false,
     playableEntries: 0,
     playableDurationSeconds: 0,
+    tracks: [],
   };
 }
 
@@ -152,6 +168,8 @@ export const initialPlaybackSnapshot: PlaybackSnapshot = {
   attribution: unavailable,
   reconnect: null,
   failure: null,
+  spectrum: Array<number>(24).fill(0),
+  positionSeconds: 0,
 };
 
 type StationAttempt = {
@@ -271,6 +289,7 @@ function trackSnapshot(entry: PlaylistEntry): PlaybackTrack {
     artist: entry.artist,
     title: entry.title,
     audiusUrl: entry.audiusUrl,
+    durationSeconds: entry.durationSeconds,
   };
 }
 
@@ -356,6 +375,13 @@ export function makeStreamingAudio(
         available: availability.available,
         playableEntries: availability.playableEntries,
         playableDurationSeconds: availability.playableDurationSeconds,
+        tracks: entries.map((entry) => ({
+          entryId: entry.entryId,
+          trackId: entry.trackId,
+          artist: entry.artist,
+          title: entry.title,
+          durationSeconds: entry.durationSeconds,
+        })),
       };
     };
 
@@ -400,14 +426,15 @@ export function makeStreamingAudio(
       );
     };
 
-    const saveEntryStart = (playlist: PlaylistDefinition, entry: PlaylistEntry) => Effect.tryPromise(() => cursorStore.save({
+    const saveEntryPosition = (playlist: PlaylistDefinition, entry: PlaylistEntry, elapsedSeconds: number) => Effect.tryPromise(() => cursorStore.save({
       version: 1,
       playlistId: playlist.id,
       entryId: entry.entryId,
       trackId: entry.trackId,
-      elapsedSeconds: 0,
+      elapsedSeconds,
       updatedAt: new Date(now()).toISOString(),
     })).pipe(Effect.catchAll((cause) => Effect.logError("Could not save Playlist cursor", cause)));
+    const saveEntryStart = (playlist: PlaylistDefinition, entry: PlaylistEntry) => saveEntryPosition(playlist, entry, 0);
 
     const skipInactive = (playlist: PlaylistDefinition): Effect.Effect<void> => Effect.gen(function* () {
       const refreshed = yield* Effect.tryPromise(() => source.refresh(playlist, AbortSignal.timeout(45_000))).pipe(
@@ -436,6 +463,7 @@ export function makeStreamingAudio(
         attribution: playlistAttribution(nextEntry),
         reconnect: null,
         failure: null,
+        positionSeconds: 0,
       });
     });
 
@@ -443,7 +471,7 @@ export function makeStreamingAudio(
       clearAttempt();
       engine?.stop();
       if (diagnostic !== undefined) yield* Effect.logError("Streaming audio failure", diagnostic);
-      yield* setState({ status: "Error", reconnect: null, failure });
+      yield* setState({ status: "Error", reconnect: null, failure, spectrum: Array<number>(24).fill(0) });
     });
 
     const renewEngineErrorSubscription = () => {
@@ -484,7 +512,7 @@ export function makeStreamingAudio(
     const beginStation = (station: StationIntegration): Effect.Effect<void, never, Scope.Scope> => Effect.gen(function* () {
       generation += 1;
       clearAttempt();
-      yield* setState({ status: "Connecting", track: null, attribution: unavailable, reconnect: null, failure: null });
+      yield* setState({ status: "Connecting", track: null, attribution: unavailable, reconnect: null, failure: null, positionSeconds: 0 });
       if (!(yield* ensureEngine())) return;
       const currentGeneration = generation;
       const controller = new AbortController();
@@ -590,6 +618,32 @@ export function makeStreamingAudio(
       }),
     })));
 
+    const selectPlaylistEntry = (
+      playlist: PlaylistDefinition,
+      entry: PlaylistEntry,
+      previousStatus: PlaybackStatus,
+      elapsedSeconds = 0,
+    ): Effect.Effect<void, never, Scope.Scope> => Effect.gen(function* () {
+      const active = ["Connecting", "Buffering", "Playing", "Reconnecting"].includes(previousStatus);
+      generation += 1;
+      clearAttempt();
+      engine?.stop();
+      yield* saveEntryPosition(playlist, entry, elapsedSeconds);
+      yield* setState({
+        selected: playlistChoice(playlist),
+        track: trackSnapshot(entry),
+        attribution: playlistAttribution(entry),
+        status: active ? "Connecting" : previousStatus,
+        reconnect: null,
+        failure: null,
+        spectrum: Array<number>(24).fill(0),
+        positionSeconds: elapsedSeconds,
+      });
+      if (!active || !(yield* ensureEngine())) return;
+      const controller = new AbortController();
+      yield* prepareEntry(playlist, entry, elapsedSeconds, generation, controller);
+    });
+
     const startPlaylistFromManifest = (
       playlist: PlaylistDefinition,
       currentGeneration: number,
@@ -625,7 +679,7 @@ export function makeStreamingAudio(
     const beginPlaylist = (playlist: PlaylistDefinition): Effect.Effect<void, never, Scope.Scope> => Effect.gen(function* () {
       generation += 1;
       clearAttempt();
-      yield* setState({ status: "Connecting", track: null, attribution: unavailable, reconnect: null, failure: null });
+      yield* setState({ status: "Connecting", track: null, attribution: unavailable, reconnect: null, failure: null, positionSeconds: 0 });
       const manifest = manifests.get(playlist.id);
       if (!manifest) {
         yield* fail("Playlist unavailable");
@@ -680,7 +734,7 @@ export function makeStreamingAudio(
       renewEngineErrorSubscription();
       const currentGeneration = generation;
       const controller = new AbortController();
-      yield* setState({ status: reason === "failed" ? "Reconnecting" : "Connecting", reconnect: null, failure: null });
+      yield* setState({ status: reason === "failed" ? "Reconnecting" : "Connecting", reconnect: null, failure: null, positionSeconds: 0 });
       yield* Effect.forkScoped(Effect.tryPromise({
         try: () => source.refresh(playlist, controller.signal),
         catch: (cause) => cause,
@@ -735,6 +789,8 @@ export function makeStreamingAudio(
                 reconnect: null,
                 failure: null,
                 status: wasActive ? "Connecting" : snapshot.status,
+                spectrum: Array<number>(24).fill(0),
+                positionSeconds: 0,
               });
               if (wasActive) yield* beginSelected();
               complete();
@@ -750,7 +806,8 @@ export function makeStreamingAudio(
                 complete();
                 return;
               }
-              if (attempt?.kind === "Playlist") yield* saveCursor(attempt);
+              const positionSeconds = attempt?.kind === "Playlist" ? elapsedFor(attempt) : 0;
+              if (attempt?.kind === "Playlist") yield* saveCursor(attempt, positionSeconds);
               const playlistPaused = snapshot.selected._tag === "Playlist";
               generation += 1;
               clearAttempt();
@@ -761,7 +818,31 @@ export function makeStreamingAudio(
                 attribution: playlistPaused ? snapshot.attribution : unavailable,
                 reconnect: null,
                 failure: null,
+                spectrum: Array<number>(24).fill(0),
+                positionSeconds,
               });
+              complete();
+              return;
+            }
+            case "Previous": {
+              const snapshot = yield* SubscriptionRef.get(state);
+              if (snapshot.selected._tag !== "Playlist") {
+                complete();
+                return;
+              }
+              const playlist = resolvePlaylist(snapshot.selected.id);
+              const manifest = playlist ? manifests.get(playlist.id) : undefined;
+              const entries = manifest ? effectiveEntries(snapshot.selected.id, manifest) : [];
+              if (!playlist || entries.length === 0) {
+                complete();
+                return;
+              }
+              if (attempt?.kind === "Playlist") yield* saveCursor(attempt);
+              const cursor = snapshot.track ? null : yield* Effect.tryPromise(() => cursorStore.load(playlist.id)).pipe(Effect.orElseSucceed(() => null));
+              const entryId = snapshot.track?.entryId ?? cursor?.entryId;
+              const currentIndex = entryId ? entries.findIndex((entry) => entry.entryId === entryId) : 0;
+              const previousIndex = currentIndex <= 0 ? entries.length - 1 : currentIndex - 1;
+              yield* selectPlaylistEntry(playlist, entries[previousIndex]!, snapshot.status);
               complete();
               return;
             }
@@ -777,6 +858,44 @@ export function makeStreamingAudio(
               }
               complete();
               return;
+            case "SelectTrack": {
+              const snapshot = yield* SubscriptionRef.get(state);
+              const { playlistId, entryId } = message.command;
+              const playlist = resolvePlaylist(playlistId);
+              const manifest = playlist ? manifests.get(playlist.id) : undefined;
+              const entry = manifest
+                ? effectiveEntries(playlistId, manifest).find((candidate) => candidate.entryId === entryId)
+                : undefined;
+              if (!playlist || !entry) {
+                complete();
+                return;
+              }
+              if (attempt?.kind === "Playlist") yield* saveCursor(attempt);
+              yield* selectPlaylistEntry(playlist, entry, snapshot.status);
+              complete();
+              return;
+            }
+            case "Seek": {
+              const snapshot = yield* SubscriptionRef.get(state);
+              if (snapshot.selected._tag !== "Playlist" || !snapshot.track) {
+                complete();
+                return;
+              }
+              const playlist = resolvePlaylist(snapshot.selected.id);
+              const manifest = playlist ? manifests.get(playlist.id) : undefined;
+              const entryId = snapshot.track.entryId;
+              const entry = manifest
+                ? effectiveEntries(snapshot.selected.id, manifest).find((candidate) => candidate.entryId === entryId)
+                : undefined;
+              if (!playlist || !entry) {
+                complete();
+                return;
+              }
+              const positionSeconds = Math.max(0, Math.min(Math.max(0, entry.durationSeconds - 0.1), message.command.positionSeconds));
+              yield* selectPlaylistEntry(playlist, entry, snapshot.status, positionSeconds);
+              complete();
+              return;
+            }
             case "SetVolume": {
               const volume = clampVolume(message.command.volume);
               if (attempt?.stream && !attempt.stream.setVolume(volume)) {
@@ -837,7 +956,11 @@ export function makeStreamingAudio(
             unsubscribe: null,
             lastFailure: undefined,
           };
-          yield* setState({ track: trackSnapshot(message.entry), attribution: playlistAttribution(message.entry) });
+          yield* setState({
+            track: trackSnapshot(message.entry),
+            attribution: playlistAttribution(message.entry),
+            positionSeconds: message.elapsed,
+          });
           openPlaylistCandidate(attempt);
           return;
         }
@@ -869,7 +992,12 @@ export function makeStreamingAudio(
           attempt.usedRange = message.usedRange;
           attempt.unsubscribe = subscribeStream(message.stream, message.generation);
           if (attempt.requestedElapsed > 0 && !message.usedRange) yield* saveCursor(attempt, 0);
-          yield* setState({ status: statusFromStream(message.stream), reconnect: null, failure: null });
+          yield* setState({
+            status: statusFromStream(message.stream),
+            reconnect: null,
+            failure: null,
+            positionSeconds: message.baseElapsed,
+          });
           return;
         }
         case "OpenFailed": {
@@ -1001,9 +1129,17 @@ export function makeStreamingAudio(
             return;
           }
           const snapshot = yield* SubscriptionRef.get(state);
-          if (status !== snapshot.status) {
+          const spectrum = status === "Playing"
+            ? engine?.readSpectrum?.(24) ?? snapshot.spectrum
+            : Array<number>(24).fill(0);
+          const positionSeconds = attempt.kind === "Playlist" ? elapsedFor(attempt) : 0;
+          const spectrumChanged = spectrum.some((value, index) => Math.abs(value - (snapshot.spectrum[index] ?? 0)) > 0.01);
+          const positionChanged = Math.abs(positionSeconds - snapshot.positionSeconds) >= 0.05;
+          if (status !== snapshot.status || spectrumChanged || positionChanged) {
             yield* setState({
               status,
+              spectrum,
+              positionSeconds,
               reconnect: status === "Reconnecting" ? snapshot.reconnect : null,
               attribution: attempt.kind === "Station"
                 ? status === "Playing" ? attempt.station.normalizeMetadata(attempt.stream.getMetadata()) : unavailable
