@@ -1,4 +1,6 @@
 import { TextAttributes } from "@opentui/core";
+import { useRenderer } from "@opentui/react";
+import { useRef } from "react";
 import { LofiText } from "../ui/lofi-text";
 
 const WALLPAPER_COLORS = {
@@ -35,6 +37,8 @@ const SUN_STOPS = [
   [1, "#ff159f"],
 ] as const satisfies readonly ColorStop[];
 
+const DEFAULT_CELL_ASPECT_RATIO = 0.5;
+
 export type WallpaperLayer = {
   readonly left: number;
   readonly top: number;
@@ -69,6 +73,20 @@ function gradientColor(stops: readonly ColorStop[], progress: number) {
 
 function wallpaperHorizon(height: number) {
   return Math.max(2, Math.min(height - 2, Math.round(height * 0.58)));
+}
+
+export function calculateSunGeometry(width: number, horizon: number, cellAspectRatio = DEFAULT_CELL_ASPECT_RATIO) {
+  const aspectRatio = Math.max(0.25, Math.min(1, cellAspectRatio));
+  const maxRadiusY = Math.floor(Math.min(horizon / 2, ((width - 1) * aspectRatio) / 2));
+  if (maxRadiusY < 1) return null;
+
+  const radiusY = Math.min(Math.round(horizon * 0.4), maxRadiusY);
+  const submergedDepth = Math.max(1, Math.round(radiusY * 0.25));
+  return { centerY: horizon - submergedDepth, radiusY, cellAspectRatio: aspectRatio } as const;
+}
+
+function ellipseHalfWidth(radiusY: number, distanceY: number, cellAspectRatio: number) {
+  return Math.floor(Math.sqrt(Math.max(0, radiusY ** 2 - distanceY ** 2)) / cellAspectRatio);
 }
 
 export function buildWallpaperBackdrop(height: number): readonly WallpaperBackdrop[] {
@@ -117,9 +135,12 @@ function sunRow(halfWidth: number, striped: boolean) {
   }).join("");
 }
 
-function sunHaloRow(halfWidth: number) {
-  const shell = ". :*";
-  return `${shell}${" ".repeat(halfWidth * 2 + 1)}${[...shell].reverse().join("")}`;
+function sunHaloRow(outerHalfWidth: number, innerHalfWidth: number) {
+  return Array.from({ length: outerHalfWidth * 2 + 1 }, (_, index) => {
+    const distanceFromCenter = Math.abs(index - outerHalfWidth);
+    if (distanceFromCenter <= innerHalfWidth) return " ";
+    return (index + outerHalfWidth) % 3 === 0 ? ":" : ".";
+  }).join("");
 }
 
 function reflectionRow(width: number, row: number, horizon: number, height: number) {
@@ -176,7 +197,11 @@ function gridRow(
   return chars.join("");
 }
 
-export function buildDesktopWallpaper(width: number, height: number): readonly WallpaperLayer[] {
+export function buildDesktopWallpaper(
+  width: number,
+  height: number,
+  cellAspectRatio = DEFAULT_CELL_ASPECT_RATIO,
+): readonly WallpaperLayer[] {
   if (width < 1 || height < 1) return [];
 
   const layers: WallpaperLayer[] = [];
@@ -213,32 +238,45 @@ export function buildDesktopWallpaper(width: number, height: number): readonly W
     });
   }
 
-  const radiusY = Math.max(2, Math.min(Math.floor(horizon / 2), Math.round(horizon * 0.35)));
-  const centerY = horizon - radiusY;
-  const radiusX = Math.max(2, Math.min(Math.floor((width - 1) / 2), Math.round(width * 0.29), Math.round(radiusY * 3.8)));
-  for (let row = Math.max(0, centerY - radiusY); row < horizon; row += 1) {
-    const normalizedY = (row - centerY + 0.45) / radiusY;
-    const halfWidth = Math.max(1, Math.round(radiusX * Math.sqrt(Math.max(0, 1 - normalizedY ** 2))));
-    const progress = (row - (centerY - radiusY)) / Math.max(1, radiusY * 2);
-    const striped = progress > 0.58;
-    const text = sunRow(halfWidth, striped);
-    const haloText = sunHaloRow(halfWidth);
-    const haloOverflow = Math.max(0, haloText.length - width);
-    const visibleHaloText = haloText.slice(Math.floor(haloOverflow / 2), haloText.length - Math.ceil(haloOverflow / 2));
-    layers.push({
-      left: Math.max(0, Math.floor((width - visibleHaloText.length) / 2)),
-      top: row,
-      text: visibleHaloText,
-      color: gradientColor([[0, "#ff9b62"], [0.55, "#ff4f86"], [1, "#df2fc0"]], progress),
-      dim: true,
-    });
-    layers.push({
-      left: Math.max(0, Math.floor((width - text.length) / 2)),
-      top: row,
-      text,
-      color: sunColor(progress),
-      bold: true,
-    });
+  const sun = calculateSunGeometry(width, horizon, cellAspectRatio);
+  if (sun) {
+    const haloRadiusY = sun.radiusY + 1;
+    const haloTop = sun.centerY - haloRadiusY;
+    const visibleHaloHeight = horizon - haloTop;
+    for (let row = Math.max(0, sun.centerY - haloRadiusY); row <= Math.min(horizon, sun.centerY + haloRadiusY - 1); row += 1) {
+      const distanceY = row + 0.5 - sun.centerY;
+      const outerHalfWidth = ellipseHalfWidth(haloRadiusY, distanceY, sun.cellAspectRatio);
+      const innerHalfWidth = Math.abs(distanceY) < sun.radiusY
+        ? ellipseHalfWidth(sun.radiusY, distanceY, sun.cellAspectRatio)
+        : -1;
+      const haloText = sunHaloRow(outerHalfWidth, innerHalfWidth);
+      const haloOverflow = Math.max(0, haloText.length - width);
+      const visibleHaloText = haloText.slice(Math.floor(haloOverflow / 2), haloText.length - Math.ceil(haloOverflow / 2));
+      const progress = (row + 0.5 - haloTop) / visibleHaloHeight;
+      layers.push({
+        left: Math.max(0, Math.floor((width - visibleHaloText.length) / 2)),
+        top: row,
+        text: visibleHaloText,
+        color: gradientColor([[0, "#ff9b62"], [0.55, "#ff4f86"], [1, "#df2fc0"]], progress),
+        dim: true,
+      });
+    }
+
+    const sunTop = sun.centerY - sun.radiusY;
+    const visibleSunHeight = horizon - sunTop;
+    for (let row = sunTop; row < horizon; row += 1) {
+      const distanceY = row + 0.5 - sun.centerY;
+      const halfWidth = ellipseHalfWidth(sun.radiusY, distanceY, sun.cellAspectRatio);
+      const progress = (row + 0.5 - sunTop) / visibleSunHeight;
+      const text = sunRow(halfWidth, progress > 0.58);
+      layers.push({
+        left: Math.max(0, Math.floor((width - text.length) / 2)),
+        top: row,
+        text,
+        color: sunColor(progress),
+        bold: true,
+      });
+    }
   }
 
   for (let row = horizon + 1; row < Math.min(height, horizon + Math.max(4, Math.round((height - horizon) * 0.45))); row += 1) {
@@ -269,9 +307,17 @@ export function buildDesktopWallpaper(width: number, height: number): readonly W
 }
 
 export function DesktopWallpaper({ width, height }: { readonly width: number; readonly height: number }) {
+  const renderer = useRenderer();
   const wallpaperHeight = Math.max(0, height - 1);
+  const cellAspectRatio = useRef<number | null>(null);
+  if (cellAspectRatio.current === null) {
+    const resolution = renderer.resolution;
+    cellAspectRatio.current = resolution && renderer.terminalWidth > 0 && renderer.terminalHeight > 0
+      ? (resolution.width * renderer.terminalHeight) / (resolution.height * renderer.terminalWidth)
+      : DEFAULT_CELL_ASPECT_RATIO;
+  }
   const backdrop = buildWallpaperBackdrop(wallpaperHeight);
-  const layers = buildDesktopWallpaper(width, wallpaperHeight);
+  const layers = buildDesktopWallpaper(width, wallpaperHeight, cellAspectRatio.current);
 
   return (
     <box
