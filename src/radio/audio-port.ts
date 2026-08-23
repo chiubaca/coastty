@@ -7,7 +7,19 @@ import type {
   AudioStreamUrlOptions,
 } from "@opentui/core";
 
-export type AudioStreamStats = { readonly state: AudioStreamState };
+export type AudioStreamStats = {
+  readonly state: AudioStreamState;
+  readonly sampleRate: number;
+  readonly channels: number;
+  readonly bufferedFrames: number;
+  readonly capacityFrames: number;
+  readonly bufferedDurationMs: number;
+  readonly bytesReceived: bigint;
+  readonly framesDecoded: bigint;
+  readonly framesPlayed: bigint;
+  readonly underruns: number;
+  readonly reconnectAttempts: number;
+};
 
 export type AudioFailureEvidence = {
   readonly error: Error;

@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.tsx",
-    "prototype:audius": "bun run src/radio/audius-playlist.prototype.ts",
     "prototype:player-controls": "bun run src/apps/lofi-player/player-controls.prototype.tsx",
+    "smoke:audius": "bun run src/radio/audius-smoke.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

@@ -6,10 +6,22 @@ lofi.fm is a terminal radio experience for listening to a curated set of live lo
 
 **Station**:
 A curated live radio choice presented to the listener, identified by its musical character rather than an individual track.
-_Avoid_: Playlist, channel, track
+_Avoid_: Channel, track, Playlist when referring to live radio
+
+**Playlist**:
+An operator-curated, fixed-order collection played from a listener-specific position that persists on their device by exact Source Collection entry identity and elapsed position. It loops continuously and supports pause, resume, and forward skip, but not track selection, reordering, shuffle, seeking, or backward navigation. If the persisted entry no longer belongs to the Playlist, playback restarts at its first playable entry.
+_Avoid_: Station, personal Station, queue
+
+**Source Collection**:
+An externally hosted, operator-maintained collection whose membership and order continuously determine a Playlist, subject only to playability filtering.
+_Avoid_: Seed, immutable source
+
+**Playable Playlist**:
+A Playlist that continuously mirrors a Source Collection while skipping only entries that are deleted, deactivated, unavailable, or currently fail to stream. It preserves the relative order of playable entries. Collection changes take effect at the next track boundary without separate approval; a stream failure skips the affected entry immediately.
+_Avoid_: Eligible Playlist, exact mirror, manual import
 
 **Coming Soon Slot**:
-A visible, non-interactive directory placeholder for a future Station. It is replaced by an available Station only after that Station has a complete, lawfully reviewed integration; it is not an unavailable Station.
+A visible, non-interactive directory placeholder for a future Station. It is replaced by an available Station only after that Station has a complete integration; it is not an unavailable Station.
 _Avoid_: Disabled Station, unavailable Station
 
 **Selected Station**:

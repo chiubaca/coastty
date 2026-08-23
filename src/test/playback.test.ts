@@ -16,7 +16,19 @@ class FakeStream implements AudioStreamPort {
   volume = 0;
 
   getStats(): AudioStreamStats {
-    return { state: this.state };
+    return {
+      state: this.state,
+      sampleRate: 48_000,
+      channels: 2,
+      bufferedFrames: 0,
+      capacityFrames: 48_000,
+      bufferedDurationMs: 0,
+      bytesReceived: 0n,
+      framesDecoded: 0n,
+      framesPlayed: 0n,
+      underruns: 0,
+      reconnectAttempts: 0,
+    };
   }
 
   getMetadata() {
