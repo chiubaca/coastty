@@ -1,7 +1,10 @@
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { TextAttributes, type BoxRenderable, type KeyEvent } from "@opentui/core";
-import { useKeyboard } from "@opentui/react";
+import { extend, useKeyboard } from "@opentui/react";
+import { THREE, ThreeRenderable } from "@opentui/three";
 import { useEffect, useRef, useState } from "react";
+import { MeshStandardNodeMaterial } from "three/webgpu";
+import { positionLocal, time, uniform, vec3 } from "three/tsl";
 import type { AppComponentProps } from "../types";
 import { windowFocusedAtom, windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
 import { playbackCommandAtom, playbackStateAtom } from "../../radio/playback-atoms";
@@ -14,6 +17,14 @@ import {
 } from "../../radio/playback";
 import { LofiText } from "../../ui/lofi-text";
 import { themes, useTheme, type ThemeColors } from "../../ui/theme";
+
+declare module "@opentui/react" {
+  interface OpenTUIComponents {
+    three: typeof ThreeRenderable;
+  }
+}
+
+extend({ three: ThreeRenderable });
 
 function canPausePlayback(status: PlaybackStatus) {
   return status === "Connecting"
@@ -37,6 +48,13 @@ export function playbackCommandForKey(key: Pick<KeyEvent, "name" | "sequence">, 
 }
 
 type SidebarSection = "radio" | "playlists";
+type Visualizer = "Bars" | "3D Blob";
+
+export function visualizerForKey(key: Pick<KeyEvent, "sequence">): Visualizer | null {
+  if (key.sequence === "1") return "Bars";
+  if (key.sequence === "2") return "3D Blob";
+  return null;
+}
 
 type LofiPlayerViewProps = {
   readonly snapshot: PlaybackSnapshot;
@@ -196,6 +214,142 @@ function Spectrum({ spectrum, colors }: { readonly spectrum: readonly number[]; 
   );
 }
 
+type BlobScene = {
+  readonly scene: THREE.Scene;
+  readonly camera: THREE.PerspectiveCamera;
+  readonly visual: THREE.Group;
+  readonly material: InstanceType<typeof MeshStandardNodeMaterial>;
+  readonly waveStrength: { value: number };
+  readonly rimLight: THREE.PointLight;
+};
+
+type BlobLevels = {
+  readonly bass: number;
+  readonly mid: number;
+  readonly treble: number;
+  readonly peak: number;
+};
+
+type BlobMotion = {
+  bass: number;
+  mid: number;
+  treble: number;
+  peak: number;
+  beat: number;
+};
+
+const BLOB_PINK = new THREE.Color("#ff4fa3");
+const BLOB_VIOLET = new THREE.Color("#a78bfa");
+
+function createBlobScene(): BlobScene {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
+  camera.position.set(0, 0.35, 2);
+  camera.lookAt(0, 0, 0);
+
+  const material = new MeshStandardNodeMaterial({
+    color: BLOB_PINK,
+    emissive: BLOB_PINK,
+    emissiveIntensity: 0,
+    metalness: 1,
+    roughness: 0.7,
+    wireframe: true,
+    wireframeLinewidth: 2,
+    opacity: 0.1,
+    transparent: true,
+  });
+  const waveStrength = uniform(0);
+  const wave = positionLocal.y.mul(4).add(time.mul(2.4)).sin().mul(0.16)
+    .add(positionLocal.x.mul(3).add(time.mul(1.8)).cos().mul(0.1))
+    .mul(waveStrength);
+  material.positionNode = positionLocal.add(vec3(wave.mul(0.25), wave.mul(0.35), wave));
+
+  const visual = new THREE.Group();
+  visual.scale.setScalar(0.7);
+  visual.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 5), material));
+  scene.add(visual);
+
+  scene.add(new THREE.AmbientLight(new THREE.Color("#7868c7"), 4));
+  const keyLight = new THREE.DirectionalLight(new THREE.Color("#ffd166"), 8);
+  keyLight.position.set(2.5, 3, 3);
+  scene.add(keyLight);
+  const rimLight = new THREE.PointLight(new THREE.Color("#ff70b7"), 8, 10);
+  rimLight.position.set(-2.5, -1, 2);
+  scene.add(rimLight);
+
+  return { scene, camera, visual, material, waveStrength, rimLight };
+}
+
+export function blobWaveStrength(spectrum: readonly number[]) {
+  return blobMusicLevels(spectrum).peak * 3;
+}
+
+export function blobMusicLevels(spectrum: readonly number[]): BlobLevels {
+  const values = spectrum.map((value) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
+  const bandSize = Math.ceil(values.length / 3);
+  const average = (start: number) => {
+    const band = values.slice(start, start + bandSize);
+    return band.length === 0 ? 0 : band.reduce((total, value) => total + value, 0) / band.length;
+  };
+
+  const peak = values.reduce((maximum, value) => Math.max(maximum, value), 0);
+  return { bass: average(0), mid: average(bandSize), treble: average(bandSize * 2), peak };
+}
+
+function smooth(current: number, target: number) {
+  return current + (target - current) * (target > current ? 0.7 : 0.12);
+}
+
+function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
+  const [model] = useState(createBlobScene);
+  const wave = blobWaveStrength(spectrum);
+  const motion = useRef<BlobMotion>({ ...blobMusicLevels(spectrum), beat: 0 });
+
+  useEffect(() => {
+    model.scene.background = new THREE.Color(colors.background);
+  }, [colors.background, model]);
+
+  useEffect(() => {
+    const current = motion.current;
+    const target = blobMusicLevels(spectrum);
+    const bassRise = target.bass - current.bass;
+    const beat = target.bass > 0.45 && bassRise > 0.05 ? Math.min(1, bassRise * 4) : 0;
+    current.bass = target.bass === 0 ? 0 : smooth(current.bass, target.bass);
+    current.mid = smooth(current.mid, target.mid);
+    current.treble = smooth(current.treble, target.treble);
+    current.peak = target.peak === 0 ? 0 : smooth(current.peak, target.peak);
+    current.beat = smooth(current.beat, beat);
+
+    model.waveStrength.value = current.peak * 3;
+    model.visual.scale.setScalar(0.7 + current.bass * 0.25);
+    model.material.emissiveIntensity = current.mid * 1.5;
+    model.material.opacity = 0.1 + current.mid * 0.3;
+    model.material.roughness = 0.7 - current.mid * 0.45;
+    const colorMix = Math.min(1, (current.mid + current.treble) / 1.5);
+    model.material.color.lerpColors(BLOB_PINK, BLOB_VIOLET, colorMix);
+    model.material.emissive.lerpColors(BLOB_PINK, BLOB_VIOLET, colorMix);
+    model.rimLight.intensity = 8 + current.treble * 22;
+
+    const fov = 44 - current.beat * 5;
+    if (model.camera.fov !== fov) {
+      model.camera.fov = fov;
+      model.camera.updateProjectionMatrix();
+    }
+    const rotation = 0.3 + current.treble * 0.9;
+    model.visual.rotation.x += 0.012 * rotation;
+    model.visual.rotation.y += 0.019 * rotation;
+  }, [model, spectrum]);
+
+  return (
+    <box flexGrow={1} minHeight={1} backgroundColor={colors.background}>
+      <three flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
+      <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
+        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>WAVE {wave.toFixed(1)} / 3.0</LofiText>
+      </box>
+    </box>
+  );
+}
+
 function formatTime(seconds: number) {
   const wholeSeconds = Math.max(0, Math.floor(seconds));
   const minutes = Math.floor(wholeSeconds / 60);
@@ -256,6 +410,7 @@ export function LofiPlayerView({
   const [section, setSection] = useState<SidebarSection>(snapshot.selected._tag === "Playlist" ? "playlists" : "radio");
   const [browsePlaylistId, setBrowsePlaylistId] = useState(initialPlaylist.id);
   const [marqueeOffset, setMarqueeOffset] = useState(0);
+  const [visualizer, setVisualizer] = useState<Visualizer>("3D Blob");
   const browsePlaylist = snapshot.directory.playlists.find((choice) => choice.id === browsePlaylistId)
     ?? initialPlaylist;
   const canPause = canPausePlayback(snapshot.status);
@@ -295,6 +450,11 @@ export function LofiPlayerView({
       setSection("playlists");
       return;
     }
+    const nextVisualizer = visualizerForKey(key);
+    if (nextVisualizer) {
+      setVisualizer(nextVisualizer);
+      return;
+    }
     const command = playbackCommandForKey(key, snapshot);
     if (command) dispatch(command);
   });
@@ -330,7 +490,9 @@ export function LofiPlayerView({
               {snapshot.status.toUpperCase()}
             </LofiText>
           </box>
-          <Spectrum spectrum={snapshot.spectrum} colors={colors} />
+          {visualizer === "Bars"
+            ? <Spectrum spectrum={snapshot.spectrum} colors={colors} />
+            : <BlobVisualizer spectrum={snapshot.spectrum} colors={colors} />}
         </box>
       </box>
 
@@ -366,6 +528,24 @@ export function LofiPlayerView({
           onMouseDown={playlistSelected ? () => dispatch(PlaybackCommand.Skip()) : undefined}
         >
           <LofiText fg={playlistSelected ? colors.accent : colors.muted}>NEXT &gt;|</LofiText>
+        </box>
+      </box>
+      <box height={1} flexDirection="row" backgroundColor={colors.shadow}>
+        <box
+          flexGrow={1}
+          justifyContent="center"
+          backgroundColor={visualizer === "Bars" ? colors.accent : colors.shadow}
+          onMouseDown={() => setVisualizer("Bars")}
+        >
+          <LofiText fg={visualizer === "Bars" ? colors.background : colors.primary} attributes={visualizer === "Bars" ? TextAttributes.BOLD : undefined}>[1] BARS</LofiText>
+        </box>
+        <box
+          flexGrow={1}
+          justifyContent="center"
+          backgroundColor={visualizer === "3D Blob" ? colors.accent : colors.shadow}
+          onMouseDown={() => setVisualizer("3D Blob")}
+        >
+          <LofiText fg={visualizer === "3D Blob" ? colors.background : colors.primary} attributes={visualizer === "3D Blob" ? TextAttributes.BOLD : undefined}>[2] BLOB</LofiText>
         </box>
       </box>
     </box>

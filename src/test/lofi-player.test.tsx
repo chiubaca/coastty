@@ -2,11 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot, flushSync } from "@opentui/react";
 import { createElement } from "react";
-import { LofiPlayerView, playbackCommandForKey } from "../apps/lofi-player";
+import { blobMusicLevels, blobWaveStrength, LofiPlayerView, playbackCommandForKey, visualizerForKey } from "../apps/lofi-player";
 import { initialPlaybackSnapshot, PlaybackCommand, type PlaybackCommand as PlaybackCommandType } from "../radio/playback";
 
 describe("lofi player", () => {
-  test("uses a collapsed visualizer canvas by default", async () => {
+  test("uses 3D Blob by default and shows a separate visualizer control pane", async () => {
     const commands: PlaybackCommandType[] = [];
     const { renderer, flush, captureCharFrame } = await createTestRenderer({ width: 54, height: 14 });
     const root = createRoot(renderer);
@@ -23,12 +23,42 @@ describe("lofi player", () => {
       expect(frame).toContain("NOW PLAYING");
       expect(frame).toContain("|< PREV");
       expect(frame).toContain("> PLAY");
+      expect(frame).toContain("[1] BARS");
+      expect(frame).toContain("[2] BLOB");
+      expect(frame).toContain("WAVE 0.0 / 3.0");
       expect(frame).not.toContain("COMING SOON");
       expect(commands).toEqual([]);
     } finally {
       root.unmount();
       renderer.destroy();
     }
+  });
+
+  test("maps silent and loud spectrum data to the blob wave range", () => {
+    expect(blobWaveStrength([])).toBe(0);
+    expect(blobWaveStrength([0, 0, 0])).toBe(0);
+    expect(blobWaveStrength([0.5, 0.2, 0.1])).toBe(1.5);
+    expect(blobWaveStrength([1, 0.8, 0.2])).toBe(3);
+    expect(blobWaveStrength([2])).toBe(3);
+  });
+
+  test("separates the spectrum into bass, mid, and treble responses", () => {
+    const levels = blobMusicLevels([
+      ...Array<number>(8).fill(0.9),
+      ...Array<number>(8).fill(0.6),
+      ...Array<number>(8).fill(0.3),
+    ]);
+
+    expect(levels.bass).toBeCloseTo(0.9);
+    expect(levels.mid).toBeCloseTo(0.6);
+    expect(levels.treble).toBeCloseTo(0.3);
+    expect(levels.peak).toBeCloseTo(0.9);
+  });
+
+  test("maps the visualizer shortcuts", () => {
+    expect(visualizerForKey({ sequence: "1" })).toBe("Bars");
+    expect(visualizerForKey({ sequence: "2" })).toBe("3D Blob");
+    expect(visualizerForKey({ sequence: "b" })).toBeNull();
   });
 
   test("reveals the radio directory and disables unavailable stations", async () => {
@@ -87,7 +117,7 @@ describe("lofi player", () => {
         durationSeconds: 180,
       },
       status: "Playing" as const,
-      spectrum: Array.from({ length: 24 }, (_, index) => index / 24),
+      spectrum: Array<number>(24).fill(0),
       positionSeconds: 45,
     };
     const { renderer, mockMouse, flush, captureCharFrame } = await createTestRenderer({ width: 54, height: 14 });
@@ -112,8 +142,8 @@ describe("lofi player", () => {
       await mockMouse.pressDown(8, 6);
       await mockMouse.release(8, 6);
       expect(commands).toContainEqual(PlaybackCommand.SelectTrack({ playlistId: "upbeat", entryId: "entry-2" }));
-      await mockMouse.pressDown(27, 12);
-      await mockMouse.release(27, 12);
+      await mockMouse.pressDown(27, 11);
+      await mockMouse.release(27, 11);
       expect(commands).toContainEqual(PlaybackCommand.Seek({ positionSeconds: 90 }));
       expect(playbackCommandForKey({ name: "left", sequence: "" }, snapshot)).toEqual(PlaybackCommand.Previous());
       expect(playbackCommandForKey({ name: "right", sequence: "" }, snapshot)).toEqual(PlaybackCommand.Skip());

@@ -1,6 +1,7 @@
 import { TextAttributes } from "@opentui/core";
 import { extend, useKeyboard } from "@opentui/react";
 import { THREE, ThreeRenderable } from "@opentui/three";
+import { writeFile } from "node:fs/promises";
 import { LineBasicNodeMaterial, MeshStandardNodeMaterial } from "three/webgpu";
 import { positionLocal, time, uniform, vec3 } from "three/tsl";
 import { useEffect, useState } from "react";
@@ -35,6 +36,7 @@ const PALETTES = [
   { label: "GOLD", value: "#ffd166" },
 ] as const;
 type Palette = (typeof PALETTES)[number]["label"];
+const SETTINGS_EXPORT_PATH = "three-demo-settings.json";
 const INSPECTOR_FIELDS = ["DETAIL", "FOV", "DISTANCE", "SCALE", "ROTATION", "WAVE", "METALNESS", "ROUGHNESS", "EMISSIVE", "AMBIENT", "KEY", "RIM", "OPACITY"] as const;
 type InspectorField = (typeof INSPECTOR_FIELDS)[number];
 type SceneControls = {
@@ -52,6 +54,42 @@ type SceneControls = {
   readonly rim: number;
   readonly opacity: number;
 };
+
+type SceneSettingsExport = {
+  readonly shape: Shape;
+  readonly renderType: RenderType;
+  readonly outlineWidth: OutlineWidth;
+  readonly palette: Palette;
+  readonly controls: SceneControls;
+  readonly paused: boolean;
+};
+
+const DEFAULT_SETTINGS: SceneSettingsExport = {
+  shape: "ICO",
+  renderType: "MESH",
+  outlineWidth: "BOLD",
+  palette: "PINK",
+  controls: {
+    detail: 5,
+    fov: 44,
+    distance: 2,
+    scale: 0.7,
+    rotation: 0.30000000000000004,
+    wave: 3,
+    metalness: 1,
+    roughness: 0.7000000000000001,
+    emissive: 0,
+    ambient: 4,
+    key: 8,
+    rim: 30,
+    opacity: 0.1,
+  },
+  paused: false,
+};
+
+function settingsForExport({ shape, renderType, outlineWidth, palette, controls, paused }: SceneSettingsExport) {
+  return { shape, renderType, outlineWidth, palette, controls, paused };
+}
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.max(minimum, Math.min(maximum, value));
@@ -171,16 +209,14 @@ export function ThreeDemo({ appId }: AppComponentProps) {
   const { theme: { colors } } = useTheme();
   const focused = useAtomValue(windowFocusedAtom(appId));
   const [model] = useState(createScene);
-  const [shape, setShape] = useState<Shape>("CUBE");
-  const [renderType, setRenderType] = useState<RenderType>("MESH");
-  const [outlineWidth, setOutlineWidth] = useState<OutlineWidth>("NORMAL");
-  const [palette, setPalette] = useState<Palette>("CYAN");
+  const [shape, setShape] = useState<Shape>(DEFAULT_SETTINGS.shape);
+  const [renderType, setRenderType] = useState<RenderType>(DEFAULT_SETTINGS.renderType);
+  const [outlineWidth, setOutlineWidth] = useState<OutlineWidth>(DEFAULT_SETTINGS.outlineWidth);
+  const [palette, setPalette] = useState<Palette>(DEFAULT_SETTINGS.palette);
   const [inspectorField, setInspectorField] = useState(0);
-  const [controls, setControls] = useState<SceneControls>({
-    detail: 2, fov: 44, distance: 4, scale: 1, rotation: 1, wave: 1,
-    metalness: 0.65, roughness: 0.2, emissive: 1.4, ambient: 1.8, key: 2.4, rim: 18, opacity: 1,
-  });
-  const [paused, setPaused] = useState(false);
+  const [controls, setControls] = useState<SceneControls>(DEFAULT_SETTINGS.controls);
+  const [paused, setPaused] = useState(DEFAULT_SETTINGS.paused);
+  const [exportStatus, setExportStatus] = useState<"idle" | "success" | "error">("idle");
 
   useEffect(() => {
     model.scene.background = new THREE.Color(colors.background);
@@ -207,6 +243,13 @@ export function ThreeDemo({ appId }: AppComponentProps) {
     previousEdgeGeometry.dispose();
     previousPointsGeometry.dispose();
   }, [controls.detail, model, shape]);
+
+  useEffect(() => {
+    const width = OUTLINE_WIDTHS.find((option) => option.label === outlineWidth)?.value ?? 1;
+    model.material.wireframeLinewidth = width;
+    model.edgeMaterial.linewidth = width;
+    model.pointsMaterial.size = 0.06 * width;
+  }, [model, outlineWidth]);
 
   useEffect(() => {
     model.camera.fov = controls.fov;
@@ -258,10 +301,6 @@ export function ThreeDemo({ appId }: AppComponentProps) {
 
   function selectOutlineWidth(nextWidth: OutlineWidth) {
     if (outlineWidth === nextWidth) return;
-    const width = OUTLINE_WIDTHS.find((option) => option.label === nextWidth)?.value ?? 1;
-    model.material.wireframeLinewidth = width;
-    model.edgeMaterial.linewidth = width;
-    model.pointsMaterial.size = 0.06 * width;
     setOutlineWidth(nextWidth);
   }
 
@@ -288,6 +327,16 @@ export function ThreeDemo({ appId }: AppComponentProps) {
         case "OPACITY": return { ...current, opacity: clamp(current.opacity + direction * 0.1, 0.1, 1) };
       }
     });
+  }
+
+  async function exportSettings() {
+    const settings = settingsForExport({ shape, renderType, outlineWidth, palette, controls, paused });
+    try {
+      await writeFile(SETTINGS_EXPORT_PATH, `${JSON.stringify(settings, null, 2)}\n`);
+      setExportStatus("success");
+    } catch {
+      setExportStatus("error");
+    }
   }
 
   function inspectorValue(field: InspectorField) {
@@ -329,6 +378,7 @@ export function ThreeDemo({ appId }: AppComponentProps) {
     if (key.sequence?.toLowerCase() === "k") setPalette("PINK");
     if (key.sequence?.toLowerCase() === "v") setPalette("VIOLET");
     if (key.sequence?.toLowerCase() === "y") setPalette("GOLD");
+    if (key.sequence?.toLowerCase() === "e") void exportSettings();
     if (key.name === "up" || key.sequence === "[") moveInspector(-1);
     if (key.name === "down" || key.sequence === "]") moveInspector(1);
     if (key.name === "left" || key.sequence === "-") adjustInspector(-1);
@@ -424,6 +474,13 @@ export function ThreeDemo({ appId }: AppComponentProps) {
           </box>
         ))}
       </box>
+      <box height={1} paddingX={1} flexDirection="row" justifyContent="space-between" backgroundColor={colors.background}>
+        <box paddingX={1} backgroundColor={colors.accent} onMouseDown={() => void exportSettings()}>
+          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[E] EXPORT SETTINGS</LofiText>
+        </box>
+        {exportStatus === "success" ? <LofiText fg={colors.glow}>EXPORTED: {SETTINGS_EXPORT_PATH}</LofiText> : null}
+        {exportStatus === "error" ? <LofiText fg={colors.highlight}>EXPORT FAILED</LofiText> : null}
+      </box>
       <box height={1} flexDirection="row" backgroundColor={colors.background}>
         <box width={4} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => moveInspector(-1)}>
           <LofiText fg={colors.primary}>[UP]</LofiText>
@@ -445,7 +502,7 @@ export function ThreeDemo({ appId }: AppComponentProps) {
         </box>
       </box>
       <box height={1} paddingX={1} justifyContent="center" backgroundColor={colors.background}>
-        <LofiText fg={colors.muted}>UP/DOWN: FIELD // LEFT/RIGHT: VALUE // 1-4: SHAPE // M/L/G/O/P/S/I: TYPE</LofiText>
+        <LofiText fg={colors.muted}>UP/DOWN: FIELD // LEFT/RIGHT: VALUE // E: EXPORT // 1-4: SHAPE // M/L/G/O/P/S/I: TYPE</LofiText>
       </box>
     </box>
   );
