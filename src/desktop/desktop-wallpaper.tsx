@@ -5,7 +5,7 @@ import { LofiText } from "../ui/lofi-text";
 
 const WALLPAPER_COLORS = {
   background: "#070316",
-  horizon: "#ffd0ec",
+  horizon: "#ff4bc8",
 } as const;
 
 type ColorStop = readonly [position: number, color: string];
@@ -72,7 +72,7 @@ function gradientColor(stops: readonly ColorStop[], progress: number) {
 }
 
 function wallpaperHorizon(height: number) {
-  return Math.max(2, Math.min(height - 2, Math.round(height * 0.58)));
+  return Math.max(2, Math.min(height - 2, Math.round((height - 1) * 0.58)));
 }
 
 export function calculateSunGeometry(width: number, horizon: number, cellAspectRatio = DEFAULT_CELL_ASPECT_RATIO) {
@@ -81,8 +81,9 @@ export function calculateSunGeometry(width: number, horizon: number, cellAspectR
   if (maxRadiusY < 1) return null;
 
   const radiusY = Math.min(Math.round(horizon * 0.4), maxRadiusY);
-  const submergedDepth = Math.max(1, Math.round(radiusY * 0.25));
-  return { centerY: horizon - submergedDepth, radiusY, cellAspectRatio: aspectRatio } as const;
+  const horizonGap = Math.max(1, Math.round(radiusY * 0.17));
+  const centerY = Math.max(radiusY, horizon - radiusY - horizonGap);
+  return { centerY, radiusY, cellAspectRatio: aspectRatio } as const;
 }
 
 function ellipseHalfWidth(radiusY: number, distanceY: number, cellAspectRatio: number) {
@@ -126,8 +127,8 @@ function sunColor(progress: number) {
 }
 
 function sunRow(halfWidth: number, striped: boolean) {
-  const edgeGlyphs = [".", ":", "*", "#"];
-  const edgeWidth = Math.min(edgeGlyphs.length, Math.max(1, halfWidth - 1));
+  const edgeGlyphs = [".", "-", "=", "+", "*", "#", "%"];
+  const edgeWidth = Math.min(edgeGlyphs.length, halfWidth + 1);
   return Array.from({ length: halfWidth * 2 + 1 }, (_, index) => {
     const edgeDistance = Math.min(index, halfWidth * 2 - index);
     if (edgeDistance < edgeWidth) return edgeGlyphs[edgeDistance];
@@ -135,18 +136,10 @@ function sunRow(halfWidth: number, striped: boolean) {
   }).join("");
 }
 
-function sunHaloRow(outerHalfWidth: number, innerHalfWidth: number) {
-  return Array.from({ length: outerHalfWidth * 2 + 1 }, (_, index) => {
-    const distanceFromCenter = Math.abs(index - outerHalfWidth);
-    if (distanceFromCenter <= innerHalfWidth) return " ";
-    return (index + outerHalfWidth) % 3 === 0 ? ":" : ".";
-  }).join("");
-}
-
-function reflectionRow(width: number, row: number, horizon: number, height: number) {
+function reflectionRow(width: number, row: number, top: number, horizon: number) {
   const center = (width - 1) / 2;
-  const depth = (row - horizon) / Math.max(1, height - horizon - 1);
-  const spread = width * (0.06 + depth * 0.2);
+  const depth = (row - top) / Math.max(1, horizon - top - 1);
+  const spread = width * (0.18 + depth * 0.18);
   const glyphs = [".", ":", "=", ":", "."];
   return Array.from({ length: width }, (_, x) => {
     if (Math.abs(x - center) > spread) return " ";
@@ -156,13 +149,13 @@ function reflectionRow(width: number, row: number, horizon: number, height: numb
 }
 
 function gridRows(horizon: number, height: number) {
-  const rows = new Set<number>([horizon]);
-  let offset = 1;
-  let gap = 1;
-  while (horizon + offset < height) {
-    rows.add(horizon + offset);
-    gap += 1;
-    offset += gap;
+  const rows = new Set<number>();
+  const lastRow = height - 4;
+  let row = horizon;
+  while (row <= Math.max(horizon, lastRow)) {
+    rows.add(row);
+    const progress = (row - horizon) / Math.max(1, lastRow - horizon);
+    row += progress < 0.38 ? 1 : progress < 0.8 ? 2 : 3;
   }
   return rows;
 }
@@ -179,19 +172,19 @@ function gridRow(
   const depth = (row - horizon) / floorHeight;
 
   if (horizontalRows.has(row)) {
-    for (let x = 0; x < width; x += 1) chars[x] = x % 12 < 10 ? "-" : " ";
+    chars.fill("-");
   }
 
   const center = (width - 1) / 2;
-  const desiredRayCount = Math.max(5, Math.min(11, Math.floor(width / 10)));
-  const rayCount = desiredRayCount % 2 === 0 ? Math.min(11, desiredRayCount + 1) : desiredRayCount;
+  const desiredRayCount = Math.max(5, Math.min(15, Math.floor(width / 10)));
+  const rayCount = desiredRayCount % 2 === 0 ? Math.min(15, desiredRayCount + 1) : desiredRayCount;
   for (let index = 0; index < rayCount; index += 1) {
-    const bottomX = index * (width - 1) / (rayCount - 1);
-    const x = Math.round(center + (bottomX - center) * depth);
+    const position = index / (rayCount - 1) * 2 - 1;
+    const horizonX = center + position * width * 0.25;
+    const bottomX = center + position * width * 0.6;
+    const x = Math.round(horizonX + (bottomX - horizonX) * depth);
     if (x < 0 || x >= width) continue;
-    if (horizontalRows.has(row)) chars[x] = "+";
-    else if (Math.abs(bottomX - center) < 1) chars[x] = "|";
-    else chars[x] = bottomX < center ? "/" : "\\";
+    chars[x] = "+";
   }
 
   return chars.join("");
@@ -240,54 +233,32 @@ export function buildDesktopWallpaper(
 
   const sun = calculateSunGeometry(width, horizon, cellAspectRatio);
   if (sun) {
-    const haloRadiusY = sun.radiusY + 1;
-    const haloTop = sun.centerY - haloRadiusY;
-    const visibleHaloHeight = horizon - haloTop;
-    for (let row = Math.max(0, sun.centerY - haloRadiusY); row <= Math.min(horizon, sun.centerY + haloRadiusY - 1); row += 1) {
-      const distanceY = row + 0.5 - sun.centerY;
-      const outerHalfWidth = ellipseHalfWidth(haloRadiusY, distanceY, sun.cellAspectRatio);
-      const innerHalfWidth = Math.abs(distanceY) < sun.radiusY
-        ? ellipseHalfWidth(sun.radiusY, distanceY, sun.cellAspectRatio)
-        : -1;
-      const haloText = sunHaloRow(outerHalfWidth, innerHalfWidth);
-      const haloOverflow = Math.max(0, haloText.length - width);
-      const visibleHaloText = haloText.slice(Math.floor(haloOverflow / 2), haloText.length - Math.ceil(haloOverflow / 2));
-      const progress = (row + 0.5 - haloTop) / visibleHaloHeight;
-      layers.push({
-        left: Math.max(0, Math.floor((width - visibleHaloText.length) / 2)),
-        top: row,
-        text: visibleHaloText,
-        color: gradientColor([[0, "#ff9b62"], [0.55, "#ff4f86"], [1, "#df2fc0"]], progress),
-        dim: true,
-      });
-    }
-
     const sunTop = sun.centerY - sun.radiusY;
-    const visibleSunHeight = horizon - sunTop;
-    for (let row = sunTop; row < horizon; row += 1) {
+    const sunBottom = Math.min(horizon, sun.centerY + sun.radiusY);
+    for (let row = Math.max(0, sunTop); row < sunBottom; row += 1) {
       const distanceY = row + 0.5 - sun.centerY;
       const halfWidth = ellipseHalfWidth(sun.radiusY, distanceY, sun.cellAspectRatio);
-      const progress = (row + 0.5 - sunTop) / visibleSunHeight;
-      const text = sunRow(halfWidth, progress > 0.58);
+      const progress = (row + 0.5 - sunTop) / (sun.radiusY * 2);
+      const text = sunRow(halfWidth, progress >= 0.75);
       layers.push({
-        left: Math.max(0, Math.floor((width - text.length) / 2)),
+        left: Math.max(0, Math.floor(width / 2) - halfWidth),
         top: row,
         text,
         color: sunColor(progress),
         bold: true,
       });
     }
-  }
 
-  for (let row = horizon + 1; row < Math.min(height, horizon + Math.max(4, Math.round((height - horizon) * 0.45))); row += 1) {
-    const depth = (row - horizon) / Math.max(1, height - horizon - 1);
-    layers.push({
-      left: 0,
-      top: row,
-      text: reflectionRow(width, row, horizon, height),
-      color: gradientColor([[0, "#ff9168"], [0.35, "#ff5f8c"], [1, "#d52aa8"]], depth),
-      dim: true,
-    });
+    for (let row = sunBottom; row < horizon; row += 1) {
+      const depth = (row - sunBottom) / Math.max(1, horizon - sunBottom - 1);
+      layers.push({
+        left: 0,
+        top: row,
+        text: reflectionRow(width, row, sunBottom, horizon),
+        color: gradientColor([[0, "#ff6d91"], [1, "#e832af"]], depth),
+        dim: true,
+      });
+    }
   }
 
   const horizontalRows = gridRows(horizon, height);
@@ -295,7 +266,7 @@ export function buildDesktopWallpaper(
     layers.push({
       left: 0,
       top: row,
-      text: row === horizon ? "=".repeat(width) : gridRow(width, row, horizon, height, horizontalRows),
+      text: gridRow(width, row, horizon, height, horizontalRows),
       color: row === horizon
         ? WALLPAPER_COLORS.horizon
         : gradientColor([[0, "#ff83d2"], [0.35, "#ff50c9"], [0.7, "#ff2cba"], [1, "#ff48d0"]], (row - horizon) / Math.max(1, height - horizon - 1)),
