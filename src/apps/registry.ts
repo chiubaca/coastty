@@ -1,6 +1,7 @@
 import { LofiPlayer } from "./lofi-player";
 import { TextEditor } from "./text-editor";
 import { ThreeDemo } from "./three-demo";
+import { ImageViewer } from "./image-viewer";
 import { appIcon } from "./icons";
 import type { AppManifest } from "./types";
 
@@ -31,5 +32,14 @@ export const apps: AppManifest[] = [
     initialSize: { width: 66, height: 25 },
     contentPadding: 0,
     Component: ThreeDemo,
+  },
+  {
+    id: "image-viewer",
+    title: "Image Viewer",
+    icon: appIcon({ glyph: "file", fallback: "*" }),
+    initialPosition: { left: 8, top: 2 },
+    initialSize: { width: 78, height: 28 },
+    contentPadding: 0,
+    Component: ImageViewer,
   },
 ];
