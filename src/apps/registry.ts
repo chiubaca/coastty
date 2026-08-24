@@ -1,5 +1,6 @@
 import { LofiPlayer } from "./lofi-player";
 import { TextEditor } from "./text-editor";
+import { ThreeDemo } from "./three-demo";
 import { appIcon } from "./icons";
 import type { AppManifest } from "./types";
 
@@ -21,5 +22,14 @@ export const apps: AppManifest[] = [
     initialSize: { width: 62, height: 22 },
     contentPadding: 1,
     Component: TextEditor,
+  },
+  {
+    id: "three-demo",
+    title: "Three Demo",
+    icon: appIcon({ glyph: "starter", fallback: "@" }),
+    initialPosition: { left: 10, top: 3 },
+    initialSize: { width: 66, height: 25 },
+    contentPadding: 0,
+    Component: ThreeDemo,
   },
 ];
