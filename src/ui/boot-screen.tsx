@@ -29,8 +29,33 @@ export const BOOT_DURATION_MS = GLOW_START_MS + GLOW_DURATION_MS;
 
 const SPINNER = ["-", "\\", "|", "/"] as const;
 
+const BOOT_LOGO = [
+  { row: `.-+%${"@".repeat(4)}%+-.`, shade: 0 },
+  { row: `.-+*%${"@".repeat(12)}%*+-.`, shade: 1 },
+  { row: `.-+*%${"@".repeat(16)}%*+-.`, shade: 2 },
+  { row: `=+*%${"@".repeat(21)}%*+=`, shade: 4 },
+  { row: `@#${"@".repeat(25)}#@`, shade: 5 },
+  { row: "=".repeat(29), shade: 5 },
+  { row: `${"=".repeat(13)}***${"=".repeat(13)}`, shade: 5 },
+  { row: "=".repeat(23), shade: 6 },
+  { row: " ", shade: 6 },
+  { row: "L O F I   8 5", shade: 6 },
+] as const;
+
+const BOOT_LOGO_WIDTH = 29;
+const ARCADE_BOOT_LOGO_COLORS = [
+  "#ff9a3c",
+  "#ff7448",
+  "#ff4e64",
+  "#ff317f",
+  "#ff1aa1",
+  "#f014bd",
+  "#c62bd8",
+] as const;
+
 export type BootFrame = {
   readonly biosLineCount: number;
+  readonly biosComplete: boolean;
   readonly titleCharacterCount: number;
   readonly glowStep: number;
   readonly complete: boolean;
@@ -45,6 +70,7 @@ export function getBootFrame(elapsedMs: number): BootFrame {
 
   return {
     biosLineCount: Math.min(BIOS_LINES.length, Math.floor(elapsed / BIOS_LINE_INTERVAL_MS) + 1),
+    biosComplete: elapsed >= (BIOS_LINES.length - 1) * BIOS_LINE_INTERVAL_MS,
     titleCharacterCount,
     glowStep: elapsed < GLOW_START_MS ? 0 : Math.floor((elapsed - GLOW_START_MS) / GLOW_INTERVAL_MS),
     complete: elapsed >= BOOT_DURATION_MS,
@@ -57,7 +83,7 @@ type BootScreenProps = {
 
 export function BootScreen({ onComplete }: BootScreenProps) {
   const { width, height } = useTerminalDimensions();
-  const { theme: { colors } } = useTheme();
+  const { themeId, theme: { colors } } = useTheme();
   const [elapsedMs, setElapsedMs] = useState(0);
   const compact = width < 68;
   const frame = getBootFrame(elapsedMs);
@@ -77,6 +103,11 @@ export function BootScreen({ onComplete }: BootScreenProps) {
   const glowColors = [colors.accent, colors.glow, colors.white, colors.glowSoft] as const;
   const glowColor = glowColors[frame.glowStep % glowColors.length];
   const spinner = SPINNER[Math.floor(elapsedMs / 150) % SPINNER.length];
+  const logoStacksWithBios = width < BOOT_LOGO_WIDTH + 46;
+  const showBootLogo = !frame.biosComplete && width >= BOOT_LOGO_WIDTH;
+  const bootLogoColors = themeId === "arcade"
+    ? ARCADE_BOOT_LOGO_COLORS
+    : [colors.highlight, colors.accent, colors.accent, colors.primary, colors.primary, colors.secondary, colors.subdued];
 
   function enterDesktop() {
     if (frame.complete) onComplete();
@@ -98,17 +129,18 @@ export function BootScreen({ onComplete }: BootScreenProps) {
 
   return (
     <box flexGrow={1} backgroundColor={colors.background} onMouseDown={enterDesktop}>
-      {!frame.complete && (
-        <box position="absolute" top={1} right={compact ? 1 : 3} width={18}>
-          <LofiText fg={colors.border}>+----------------+</LofiText>
-          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>| [] LOFI.FM    |</LofiText>
-          <LofiText fg={colors.secondary}>|    FM/OS  95  |</LofiText>
-          <LofiText fg={colors.border}>+----------------+</LofiText>
+      {showBootLogo && (
+        <box position="absolute" top={1} right={width === BOOT_LOGO_WIDTH ? 0 : compact ? 1 : 3} width={BOOT_LOGO_WIDTH}>
+          {BOOT_LOGO.map(({ row, shade }, index) => (
+            <LofiText key={index} fg={bootLogoColors[shade]} attributes={TextAttributes.BOLD}>
+              {`${" ".repeat(Math.floor((BOOT_LOGO_WIDTH - row.length) / 2))}${row}`}
+            </LofiText>
+          ))}
         </box>
       )}
 
       {elapsedMs < TITLE_START_MS && (
-        <box position="absolute" top={compact ? 7 : 3} left={compact ? 2 : 4}>
+        <box position="absolute" top={logoStacksWithBios ? BOOT_LOGO.length + 3 : 3} left={compact ? 2 : 4}>
           {BIOS_LINES.slice(0, frame.biosLineCount).map((line, index) => (
             <LofiText
               key={line}
