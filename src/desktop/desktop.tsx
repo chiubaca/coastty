@@ -13,6 +13,7 @@ import { useTheme } from "../ui/theme";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
 import { DesktopWallpaper } from "./desktop-wallpaper";
+import { DESKTOP_ICON_HEIGHT, DESKTOP_ICON_WIDTH, DesktopIcon, desktopIconPosition } from "./desktop-icon";
 
 const DOUBLE_CLICK_MS = 350;
 
@@ -123,19 +124,17 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
       </box>
       {width >= 48 && <LofiText position="absolute" left={3} top={2} fg={colors.glowSoft} bg={colors.background} attributes={TextAttributes.DIM}>Macintosh HD</LofiText>}
 
-      {apps.map((app, index) => {
+      {width >= DESKTOP_ICON_WIDTH && height >= DESKTOP_ICON_HEIGHT + 1 && apps.map((app, index) => {
         const selected = app.id === selectedAppId;
         const hovered = app.id === hoveredAppId;
         return (
-          <box
+          <DesktopIcon
             key={app.id}
-            position="absolute"
-            left={3 + index * 12}
-            top={5}
-            width={app.title.length + 2}
-            height={2}
-            alignItems="center"
-            backgroundColor={selected ? colors.accent : hovered ? colors.highlight : colors.primary}
+            app={app}
+            position={desktopIconPosition(index, width, height)}
+            colors={colors}
+            selected={selected}
+            hovered={hovered}
             onMouseOver={() => setHoveredAppId(app.id)}
             onMouseOut={() => setHoveredAppId(null)}
             onMouseDown={() => {
@@ -144,10 +143,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               if (lastClick.appId === app.id && now - lastClick.at < DOUBLE_CLICK_MS) activate(app.id);
               setLastClick({ appId: app.id, at: now });
             }}
-          >
-            <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
-            <LofiText fg={colors.background}> {app.title} </LofiText>
-          </box>
+          />
         );
       })}
 
