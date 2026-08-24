@@ -21,7 +21,7 @@ export class WindowManagerState extends Data.Class<{
 }> {}
 
 export type WindowCommand = Data.TaggedEnum<{
-  Open: { readonly app: AppManifest };
+  Open: { readonly app: AppManifest; readonly position?: { readonly left: number; readonly top: number } };
   Close: { readonly appId: string };
   Minimize: { readonly appId: string };
   Restore: { readonly appId: string };
@@ -42,14 +42,18 @@ function updateState(state: WindowManagerState, changes: Partial<WindowManagerSt
   return new WindowManagerState({ ...state, ...changes });
 }
 
-function openWindow(state: WindowManagerState, app: AppManifest): WindowManagerState {
+function openWindow(
+  state: WindowManagerState,
+  app: AppManifest,
+  position: { readonly left: number; readonly top: number } | undefined,
+): WindowManagerState {
   if (HashMap.has(state.windows, app.id)) return restoreWindow(state, app.id);
 
   const window = new ManagedWindow({
     appId: app.id,
     title: app.title,
-    left: app.initialPosition.left,
-    top: app.initialPosition.top,
+    left: position?.left ?? app.initialPosition.left,
+    top: position?.top ?? app.initialPosition.top,
     zIndex: state.nextZIndex,
     minimized: false,
   });
@@ -134,7 +138,7 @@ function setWindowTitle(state: WindowManagerState, appId: string, title: string)
 
 export function reduceWindowManager(state: WindowManagerState, command: WindowCommand): WindowManagerState {
   return Match.valueTags(command, {
-    Open: ({ app }) => openWindow(state, app),
+    Open: ({ app, position }) => openWindow(state, app, position),
     Close: ({ appId }) => closeWindow(state, appId),
     Minimize: ({ appId }) => minimizeWindow(state, appId),
     Restore: ({ appId }) => restoreWindow(state, appId),

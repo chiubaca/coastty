@@ -14,6 +14,7 @@ import {
   windowManagerAtom,
   WindowCommand,
 } from "../desktop/window-manager";
+import { initialLofiPlayerPosition } from "../desktop/desktop";
 
 const lofiApp: AppManifest = {
   id: "lofi-player",
@@ -29,6 +30,11 @@ function windowFrom(state: typeof initialWindowManagerState, appId = lofiApp.id)
 }
 
 describe("window manager", () => {
+  test("places the booted player at the bottom-left with padding", () => {
+    expect(initialLofiPlayerPosition(40, 24)).toEqual({ left: 2, top: 14 });
+    expect(initialLofiPlayerPosition(24, 24)).toEqual({ left: 2, top: 1 });
+  });
+
   test("opens an app at its manifest defaults", () => {
     const state = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
 
@@ -39,6 +45,15 @@ describe("window manager", () => {
       minimized: false,
     });
     expect(state.focusedAppId).toEqual(Option.some(lofiApp.id));
+  });
+
+  test("uses an explicit position when opening an app", () => {
+    const state = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({
+      app: lofiApp,
+      position: { left: 2, top: 14 },
+    }));
+
+    expect(windowFrom(state)).toMatchObject({ left: 2, top: 14 });
   });
 
   test("minimize and restore preserve geometry while raising the window", () => {

@@ -1,10 +1,12 @@
 import { TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
 import { apps } from "../apps/registry";
+import { PlaybackCommand } from "../radio/playback";
+import { playbackCommandAtom } from "../radio/playback-atoms";
 import { usePlaybackLifecycle } from "../radio/playback-lifecycle";
 import { LofiText } from "../ui/lofi-text";
 import { useTheme } from "../ui/theme";
@@ -16,9 +18,14 @@ const DOUBLE_CLICK_MS = 350;
 
 type DesktopProps = {
   readonly onRestart: () => void;
+  readonly autoplay: boolean;
 };
 
-export function Desktop({ onRestart }: DesktopProps) {
+export function initialLofiPlayerPosition(viewportHeight: number, playerHeight: number) {
+  return { left: 2, top: Math.max(1, viewportHeight - playerHeight - 2) };
+}
+
+export function Desktop({ onRestart, autoplay }: DesktopProps) {
   const { width, height } = useTerminalDimensions();
   const { theme, cycleTheme } = useTheme();
   const { colors } = theme;
@@ -30,7 +37,19 @@ export function Desktop({ onRestart }: DesktopProps) {
   const windows = useAtomValue(windowsAtom);
   const focusedAppId = useAtomValue(focusedAppIdAtom);
   const dispatchWindow = useAtomSet(windowManagerAtom);
+  const dispatchPlayback = useAtomSet(playbackCommandAtom);
   const playbackLifecycle = usePlaybackLifecycle();
+
+  useEffect(() => {
+    const player = apps.find((app) => app.id === "lofi-player");
+    if (!player) return;
+
+    dispatchWindow(WindowCommand.Open({
+      app: player,
+      position: initialLofiPlayerPosition(height, player.initialSize.height),
+    }));
+    if (autoplay) dispatchPlayback(PlaybackCommand.Play());
+  }, [autoplay, dispatchPlayback, dispatchWindow, height]);
 
   function activate(appId: string) {
     const app = apps.find((candidate) => candidate.id === appId);

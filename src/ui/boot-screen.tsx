@@ -78,13 +78,14 @@ export function getBootFrame(elapsedMs: number): BootFrame {
 }
 
 type BootScreenProps = {
-  readonly onComplete: () => void;
+  readonly onComplete: (musicOn: boolean) => void;
 };
 
 export function BootScreen({ onComplete }: BootScreenProps) {
   const { width, height } = useTerminalDimensions();
   const { themeId, theme: { colors } } = useTheme();
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [musicOn, setMusicOn] = useState(true);
   const compact = width < 68;
   const frame = getBootFrame(elapsedMs);
   const titleGlyphCount = Math.min(10, Math.max(0, frame.titleCharacterCount - 1));
@@ -110,7 +111,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
     : [colors.highlight, colors.accent, colors.accent, colors.primary, colors.primary, colors.secondary, colors.subdued];
 
   function enterDesktop() {
-    if (frame.complete) onComplete();
+    if (frame.complete) onComplete(musicOn);
   }
 
   useKeyboard((key) => {
@@ -188,6 +189,32 @@ export function BootScreen({ onComplete }: BootScreenProps) {
             ? `${spinner} BOOTING FROM LOFI DISK`
             : "SIGNAL LOCKED // CALIBRATING DISPLAY"}
         </LofiText>
+      )}
+
+      {frame.complete && (
+        <box position="absolute" right={compact ? 1 : 3} bottom={2} height={1} flexDirection="row" backgroundColor={colors.shadow}>
+          <box
+            paddingX={1}
+            backgroundColor={musicOn ? colors.accent : colors.shadow}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              setMusicOn(true);
+            }}
+          >
+            <LofiText fg={musicOn ? colors.background : colors.primary} attributes={musicOn ? TextAttributes.BOLD : undefined}>MUSIC ON</LofiText>
+          </box>
+          <LofiText fg={colors.muted}> / </LofiText>
+          <box
+            paddingX={1}
+            backgroundColor={!musicOn ? colors.accent : colors.shadow}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              setMusicOn(false);
+            }}
+          >
+            <LofiText fg={!musicOn ? colors.background : colors.primary} attributes={!musicOn ? TextAttributes.BOLD : undefined}>MUSIC OFF</LofiText>
+          </box>
+        </box>
       )}
     </box>
   );

@@ -1,0 +1,22 @@
+{
+  "shape": "ICO",
+  "renderType": "MESH",
+  "outlineWidth": "BOLD",
+  "palette": "PINK",
+  "controls": {
+    "detail": 5,
+    "fov": 44,
+    "distance": 2,
+    "scale": 0.7,
+    "rotation": 0.30000000000000004,
+    "wave": 3,
+    "metalness": 1,
+    "roughness": 0.7000000000000001,
+    "emissive": 0,
+    "ambient": 4,
+    "key": 8,
+    "rim": 30,
+    "opacity": 0.1
+  },
+  "paused": false
+}

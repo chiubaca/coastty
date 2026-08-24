@@ -12,10 +12,14 @@ import { ThemeProvider } from "./ui/theme";
 
 function LofiFm() {
   const [booted, setBooted] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
 
   return booted
-    ? <Desktop onRestart={() => setBooted(false)} />
-    : <BootScreen onComplete={() => setBooted(true)} />;
+    ? <Desktop autoplay={autoplay} onRestart={() => setBooted(false)} />
+    : <BootScreen onComplete={(musicOn) => {
+      setAutoplay(musicOn);
+      setBooted(true);
+    }} />;
 }
 
 const program = Effect.scoped(Effect.gen(function* () {
