@@ -10,8 +10,10 @@ import { OpenTui, OpenTuiLive } from "./runtime/open-tui";
 import { BootScreen } from "./ui/boot-screen";
 import { ThemeProvider } from "./ui/theme";
 
+const skipBootSequence = process.argv.includes("--skip-boot-sequence");
+
 function LofiFm() {
-  const [booted, setBooted] = useState(false);
+  const [booted, setBooted] = useState(skipBootSequence);
   const [autoplay, setAutoplay] = useState(true);
 
   return booted

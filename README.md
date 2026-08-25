@@ -12,6 +12,12 @@ To run:
 bun dev
 ```
 
+Start directly on the desktop instead of showing the boot sequence:
+
+```bash
+bun dev --skip-boot-sequence
+```
+
 Audius reads work anonymously. Set the optional `AUDIUS_API_KEY` environment
 variable to use a read-only key for higher published limits. Playlist cursors
 are stored under `~/.lofi-fm/playlist-cursors`; set `LOFI_FM_STATE_DIR` to use a

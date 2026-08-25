@@ -21,9 +21,7 @@ const TITLE_START_MS = 3_375;
 const TITLE_CHARACTER_INTERVAL_MS = 57;
 const GLOW_INTERVAL_MS = 210;
 const GLOW_DURATION_MS = 1_470;
-const ENTRY_FADE_INTERVAL_MS = 180;
-const ENTRY_FADE_STEPS = 4;
-const ENTRY_PULSE_INTERVAL_MS = 240;
+const ENTRY_BRACKET_INTERVAL_MS = 480;
 const GLOW_START_MS = TITLE_START_MS + BOOT_TITLE.length * TITLE_CHARACTER_INTERVAL_MS;
 export const BOOT_DURATION_MS = GLOW_START_MS + GLOW_DURATION_MS;
 
@@ -92,15 +90,10 @@ export function BootScreen({ onComplete }: BootScreenProps) {
   const titleGlyphs = "/".repeat(titleGlyphCount);
   const expandedTitle = `${titleGlyphs}  L O F I . F M  ${titleGlyphs}`;
   const titleVisible = elapsedMs >= TITLE_START_MS;
-  const entryPrompt = "[CLICK TO ENTER]";
-  const entryPulseColors = [colors.subdued, colors.accent, colors.glow, colors.white, colors.glow, colors.accent] as const;
   const entryAgeMs = Math.max(0, elapsedMs - BOOT_DURATION_MS);
-  const entryFadeColors = [colors.shadow, colors.muted, colors.secondary, colors.subdued] as const;
-  const entryFadeStep = Math.min(ENTRY_FADE_STEPS - 1, Math.floor(entryAgeMs / ENTRY_FADE_INTERVAL_MS));
-  const entryPulseStep = Math.max(0, Math.floor((entryAgeMs - ENTRY_FADE_STEPS * ENTRY_FADE_INTERVAL_MS) / ENTRY_PULSE_INTERVAL_MS));
-  const entryColor = entryAgeMs < ENTRY_FADE_STEPS * ENTRY_FADE_INTERVAL_MS
-    ? entryFadeColors[entryFadeStep]
-    : entryPulseColors[entryPulseStep % entryPulseColors.length];
+  const entryBracketCount = Math.floor(entryAgeMs / ENTRY_BRACKET_INTERVAL_MS) % 4;
+  const entryBrackets = "[".repeat(entryBracketCount);
+  const entryPrompt = `${entryBrackets}CLICK TO ENTER${"]".repeat(entryBracketCount)}`;
   const glowColors = [colors.accent, colors.glow, colors.white, colors.glowSoft] as const;
   const glowColor = glowColors[frame.glowStep % glowColors.length];
   const spinner = SPINNER[Math.floor(elapsedMs / 150) % SPINNER.length];
@@ -156,7 +149,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
 
       {titleVisible && (
         <box flexGrow={1} alignItems="center" justifyContent="center">
-          <box height={3} width={Math.max(expandedTitle.length, entryPrompt.length)} alignItems="center" justifyContent="center">
+          <box height={3} width={Math.max(expandedTitle.length, "[[[CLICK TO ENTER]]]".length)} alignItems="center" justifyContent="center">
             <LofiText position="absolute" top={0} fg={colors.shadow} attributes={TextAttributes.DIM}>
               {expandedTitle}
             </LofiText>
@@ -171,7 +164,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
                 <LofiText position="absolute" top={4} fg={colors.shadow} attributes={TextAttributes.DIM}>
                   {entryPrompt}
                 </LofiText>
-                <LofiText position="absolute" top={5} fg={entryColor} attributes={TextAttributes.BOLD}>
+                <LofiText position="absolute" top={5} fg={colors.accent} attributes={TextAttributes.BOLD}>
                   {entryPrompt}
                 </LofiText>
                 <LofiText position="absolute" top={6} fg={colors.shadow} attributes={TextAttributes.DIM}>
