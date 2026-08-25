@@ -11,7 +11,9 @@ describe("image viewer gallery", () => {
       .filter((name) => [".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"].includes(extname(name).toLowerCase()))
       .sort((left, right) => left.localeCompare(right));
 
-    expect(images.map((image) => image.name)).toEqual(expected);
-    expect(images.every((image) => image.path.startsWith("/"))).toBe(true);
+    expect(images[0]).toEqual({ kind: "ascii", name: "ASCII-ART" });
+    const galleryImages = images.filter((image) => image.kind === "image");
+    expect(galleryImages.map((image) => image.name)).toEqual(expected);
+    expect(galleryImages.every((image) => image.path.startsWith("/"))).toBe(true);
   });
 });

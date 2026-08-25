@@ -1,7 +1,18 @@
 import { TextAttributes } from "@opentui/core";
-import { useRenderer } from "@opentui/react";
-import { useRef } from "react";
+import { extend, useRenderer } from "@opentui/react";
+import { THREE, ThreeRenderable, TextureUtils } from "@opentui/three";
+import * as Atom from "@effect-atom/atom/Atom";
+import { useAtomValue } from "@effect-atom/atom-react/Hooks";
+import { useEffect, useRef, useState } from "react";
 import { LofiText } from "../ui/lofi-text";
+
+declare module "@opentui/react" {
+  interface OpenTUIComponents {
+    three: typeof ThreeRenderable;
+  }
+}
+
+extend({ three: ThreeRenderable });
 
 const WALLPAPER_COLORS = {
   background: "#070316",
@@ -39,6 +50,22 @@ const SUN_STOPS = [
 
 const DEFAULT_CELL_ASPECT_RATIO = 0.5;
 
+export type WallpaperSelection =
+  | { readonly kind: "ascii" }
+  | { readonly kind: "image"; readonly path: string };
+
+export const ASCII_ART_WALLPAPER: WallpaperSelection = { kind: "ascii" };
+
+const wallpaperStateAtom = Atom.make<WallpaperSelection>(ASCII_ART_WALLPAPER).pipe(
+  Atom.keepAlive,
+  Atom.withLabel("desktop/wallpaper-state"),
+);
+
+export const desktopWallpaperAtom = Atom.writable(
+  (get) => get(wallpaperStateAtom),
+  (context, wallpaper: WallpaperSelection) => context.set(wallpaperStateAtom, wallpaper),
+).pipe(Atom.withLabel("desktop/wallpaper"));
+
 export type WallpaperLayer = {
   readonly left: number;
   readonly top: number;
@@ -52,6 +79,25 @@ export type WallpaperBackdrop = {
   readonly top: number;
   readonly color: string;
 };
+
+type ImageWallpaperScene = {
+  readonly scene: THREE.Scene;
+  readonly camera: THREE.PerspectiveCamera;
+  readonly image: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+};
+
+function createImageWallpaperScene(): ImageWallpaperScene {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(WALLPAPER_COLORS.background);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
+  camera.position.z = 2.4;
+  const image = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color("#1c1031") }),
+  );
+  scene.add(image);
+  return { scene, camera, image };
+}
 
 function interpolateHex(from: string, to: string, progress: number) {
   const fromValue = Number.parseInt(from.slice(1), 16);
@@ -277,9 +323,13 @@ export function buildDesktopWallpaper(
   return layers;
 }
 
-export function DesktopWallpaper({ width, height }: { readonly width: number; readonly height: number }) {
+export function AsciiArtWallpaper({ width, height, top = 1 }: {
+  readonly width: number;
+  readonly height: number;
+  readonly top?: number;
+}) {
   const renderer = useRenderer();
-  const wallpaperHeight = Math.max(0, height - 1);
+  const wallpaperHeight = Math.max(0, height - top);
   const cellAspectRatio = useRef<number | null>(null);
   if (cellAspectRatio.current === null) {
     const resolution = renderer.resolution;
@@ -294,7 +344,7 @@ export function DesktopWallpaper({ width, height }: { readonly width: number; re
     <box
       position="absolute"
       left={0}
-      top={1}
+      top={top}
       width={width}
       height={wallpaperHeight}
       backgroundColor={WALLPAPER_COLORS.background}
@@ -325,4 +375,75 @@ export function DesktopWallpaper({ width, height }: { readonly width: number; re
       ))}
     </box>
   );
+}
+
+function ImageWallpaper({ width, height, path }: { readonly width: number; readonly height: number; readonly path: string }) {
+  const wallpaperHeight = Math.max(0, height - 1);
+  const [model] = useState(createImageWallpaperScene);
+  const canvas = useRef<ThreeRenderable>(null);
+  const [imageAspect, setImageAspect] = useState(1);
+
+  function fillViewport(aspect: number) {
+    const viewportAspect = canvas.current?.aspectRatio ?? Math.max(0.5, width / Math.max(1, wallpaperHeight * 2));
+    const viewportHeight = 2.1;
+    const viewportWidth = viewportHeight * viewportAspect;
+    const imageWidth = aspect >= viewportAspect ? viewportHeight * aspect : viewportWidth;
+    const imageHeight = aspect >= viewportAspect ? viewportHeight : viewportWidth / aspect;
+    model.image.scale.set(imageWidth, imageHeight, 1);
+  }
+
+  useEffect(() => {
+    fillViewport(imageAspect);
+  }, [height, imageAspect, width]);
+
+  useEffect(() => () => {
+    const texture = model.image.material.map;
+    model.image.material.map = null;
+    texture?.dispose();
+  }, [model]);
+
+  useEffect(() => {
+    let active = true;
+
+    void TextureUtils.fromFile(path).then((texture) => {
+      if (!active) {
+        texture?.dispose();
+        return;
+      }
+      if (!texture) return;
+
+      const previous = model.image.material.map;
+      model.image.material.map = texture;
+      model.image.material.color.set("#ffffff");
+      model.image.material.needsUpdate = true;
+      previous?.dispose();
+      setImageAspect(texture.image.width / texture.image.height);
+    }).catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [model, path]);
+
+  return (
+    <box
+      position="absolute"
+      left={0}
+      top={1}
+      width={width}
+      height={wallpaperHeight}
+      zIndex={-1}
+      backgroundColor={WALLPAPER_COLORS.background}
+      overflow="hidden"
+    >
+      <three ref={canvas} flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
+    </box>
+  );
+}
+
+export function DesktopWallpaper({ width, height }: { readonly width: number; readonly height: number }) {
+  const wallpaper = useAtomValue(desktopWallpaperAtom);
+  return wallpaper.kind === "image"
+    ? <ImageWallpaper width={width} height={height} path={wallpaper.path} />
+    : <AsciiArtWallpaper width={width} height={height} />;
 }

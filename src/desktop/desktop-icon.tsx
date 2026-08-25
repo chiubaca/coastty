@@ -51,7 +51,9 @@ export function DesktopIcon({
 }: DesktopIconProps) {
   const labelWidth = app.title.length + 2;
   const labelLeft = Math.floor((DESKTOP_ICON_WIDTH - labelWidth) / 2);
-  const baseColor = selected || hovered ? colors.highlight : colors.primary;
+  const baseColor = selected || hovered ? colors.highlight : colors.glowSoft;
+  const labelBackground = selected ? colors.accent : hovered ? colors.secondary : colors.shadow;
+  const labelForeground = selected ? colors.background : colors.glowSoft;
 
   return (
     <box
@@ -65,16 +67,14 @@ export function DesktopIcon({
       onMouseOut={onMouseOut}
       onMouseDown={onMouseDown}
     >
-      <box width={3} height={2} position="relative">
-        <LofiText position="absolute" left={2} top={1} fg={colors.shadow} attributes={TextAttributes.DIM}>{app.icon}</LofiText>
-        <LofiText position="absolute" left={1} fg={baseColor} attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
+      <box width={3} height={2} position="relative" >
+        <LofiText position="absolute" left={0.1} top={0.1} fg={colors.background} attributes={TextAttributes.DIM}>{app.icon}</LofiText>
+        <LofiText position="absolute" left={0} fg={baseColor} attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
       </box>
       <box width={DESKTOP_ICON_WIDTH} height={1} position="relative">
-        {selected
-          ? <box position="absolute" left={labelLeft} width={labelWidth} height={1} alignItems="center" backgroundColor={colors.accent}>
-              <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{app.title}</LofiText>
-            </box>
-          : <LofiText position="absolute" left={labelLeft + 1} fg={hovered ? colors.glow : colors.glowSoft} attributes={hovered ? TextAttributes.BOLD : undefined}>{app.title}</LofiText>}
+        <box position="absolute" left={labelLeft} width={labelWidth} height={1} justifyContent="center" backgroundColor={labelBackground}>
+          <LofiText fg={labelForeground} attributes={selected || hovered ? TextAttributes.BOLD : undefined}>{app.title}</LofiText>
+        </box>
       </box>
     </box>
   );
