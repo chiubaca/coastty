@@ -26,6 +26,10 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const top = Math.min(window.top, maxTop);
   const contentPadding = app.contentPadding ?? 1;
   const hasOverflow = scrollState !== null && scrollState.size > scrollState.viewportSize;
+  const contentSize = {
+    width: Math.max(0, app.initialSize.width - 2 - contentPadding * 2 - (hasOverflow ? 3 : 0)),
+    height: Math.max(0, app.initialSize.height - 2 - contentPadding * 2),
+  };
   const trackHeight = app.initialSize.height - 2 - contentPadding * 2;
   const thumbHeight = hasOverflow
     ? Math.max(1, Math.min(trackHeight, Math.round((scrollState.viewportSize / scrollState.size) * trackHeight)))
@@ -78,7 +82,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       >
         <box flexGrow={1} flexDirection="row">
           <box flexGrow={1} padding={contentPadding}>
-            {createElement(app.Component, { appId: app.id, onScrollStateChange: setScrollState })}
+            {createElement(app.Component, { appId: app.id, contentSize, onScrollStateChange: setScrollState })}
           </box>
           {hasOverflow && <box width={3} paddingY={1} alignItems="center" flexDirection="column" backgroundColor={colors.shadow}>
             <box

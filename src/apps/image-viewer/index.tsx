@@ -1,24 +1,15 @@
 import { TextAttributes } from "@opentui/core";
-import { extend, useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { THREE, ThreeRenderable, TextureUtils } from "@opentui/three";
+import { useKeyboard } from "@opentui/react";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { AppComponentProps } from "../types";
 import { ASCII_ART_WALLPAPER, AsciiArtWallpaper, desktopWallpaperAtom } from "../../desktop/desktop-wallpaper";
 import { windowFocusedAtom } from "../../desktop/window-manager";
 import { LofiText } from "../../ui/lofi-text";
 import { useTheme } from "../../ui/theme";
-
-declare module "@opentui/react" {
-  interface OpenTUIComponents {
-    three: typeof ThreeRenderable;
-  }
-}
-
-extend({ three: ThreeRenderable });
 
 const GALLERY_DIRECTORY = fileURLToPath(new URL("../../assets/gallery/", import.meta.url));
 const IMAGE_EXTENSIONS = new Set([".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"]);
@@ -47,50 +38,14 @@ export async function loadGallery(): Promise<readonly GalleryItem[]> {
   return [ASCII_ART_GALLERY_ITEM, ...images];
 }
 
-type LightboxScene = {
-  readonly scene: THREE.Scene;
-  readonly camera: THREE.PerspectiveCamera;
-  readonly image: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-};
-
-function createLightboxScene(): LightboxScene {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#07030f");
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
-  camera.position.z = 2.4;
-  const image = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ color: new THREE.Color("#1c1031") }),
-  );
-  scene.add(image);
-  return { scene, camera, image };
-}
-
-export function ImageViewer({ appId }: AppComponentProps) {
+export function ImageViewer({ appId, contentSize }: AppComponentProps) {
   const { theme: { colors } } = useTheme();
-  const { width, height } = useTerminalDimensions();
   const focused = useAtomValue(windowFocusedAtom(appId));
   const setWallpaper = useAtomSet(desktopWallpaperAtom);
-  const [model] = useState(createLightboxScene);
-  const canvas = useRef<ThreeRenderable>(null);
   const [gallery, setGallery] = useState<readonly GalleryItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [imageAspect, setImageAspect] = useState(1);
   const selected = gallery[selectedIndex];
-
-  function fillViewport(aspect: number) {
-    const viewportAspect = canvas.current?.aspectRatio ?? Math.max(0.5, width / Math.max(1, height * 2));
-    const viewportHeight = 2.1;
-    const viewportWidth = viewportHeight * viewportAspect;
-    const imageWidth = aspect >= viewportAspect ? viewportHeight * aspect : viewportWidth;
-    const imageHeight = aspect >= viewportAspect ? viewportHeight : viewportWidth / aspect;
-    model.image.scale.set(imageWidth, imageHeight, 1);
-  }
-
-  useEffect(() => {
-    fillViewport(imageAspect);
-  }, [height, imageAspect, width]);
 
   useEffect(() => {
     let active = true;
@@ -107,40 +62,11 @@ export function ImageViewer({ appId }: AppComponentProps) {
 
   useEffect(() => {
     if (!selected || selected.kind === "ascii") {
-      const previous = model.image.material.map;
-      model.image.material.map = null;
-      model.image.material.color.set("#1c1031");
-      model.image.material.needsUpdate = true;
-      previous?.dispose();
       setLoading(false);
       return;
     }
-    let active = true;
     setLoading(true);
-
-    void TextureUtils.fromFile(selected.path).then((texture) => {
-      if (!active) {
-        texture?.dispose();
-        return;
-      }
-      if (!texture) {
-        setLoading(false);
-        return;
-      }
-      const previous = model.image.material.map;
-      const aspect = texture.image.width / texture.image.height;
-      model.image.material.map = texture;
-      model.image.material.color.set("#ffffff");
-      model.image.material.needsUpdate = true;
-      previous?.dispose();
-      setImageAspect(aspect);
-      setLoading(false);
-    }).catch(() => active && setLoading(false));
-
-    return () => {
-      active = false;
-    };
-  }, [model, selected]);
+  }, [selected]);
 
   function selectImage(nextIndex: number) {
     if (gallery.length === 0) return;
@@ -162,8 +88,8 @@ export function ImageViewer({ appId }: AppComponentProps) {
   return (
     <box flexGrow={1} minWidth={1} flexDirection="column" backgroundColor="#07030f">
       <box flexGrow={1} minHeight={4} backgroundColor="#07030f" overflow="hidden">
-        <three ref={canvas} flexGrow={1} minHeight={2} scene={model.scene} camera={model.camera} />
-        {selected?.kind === "ascii" && <AsciiArtWallpaper width={width} height={height} top={0} />}
+        {selected?.kind === "image" && <image flexGrow={1} minHeight={2} source={selected.path} fit="fit" onLoad={() => setLoading(false)} onError={() => setLoading(false)} />}
+        {selected?.kind === "ascii" && <AsciiArtWallpaper width={contentSize.width} height={Math.max(0, contentSize.height - 1)} top={0} />}
         <box position="absolute" left={0} top={0} height={1} paddingX={1} backgroundColor="#07030f">
           <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>GALLERY LIGHTBOX</LofiText>
         </box>
@@ -178,7 +104,6 @@ export function ImageViewer({ appId }: AppComponentProps) {
         </box>
         {loading && <LofiText position="absolute" left="50%" top="50%" fg={colors.glow}>LOADING IMAGE...</LofiText>}
         {!loading && !selected && <LofiText position="absolute" left="50%" top="50%" fg={colors.muted}>NO IMAGES FOUND</LofiText>}
-        {selected?.kind === "ascii" && <LofiText position="absolute" left="50%" top="50%" fg={colors.glow} attributes={TextAttributes.BOLD}>ASCII-ART WALLPAPER</LofiText>}
       </box>
       <box height={1} paddingX={1} justifyContent="space-between" backgroundColor={colors.shadow}>
         <LofiText fg={colors.primary}>{selected?.name ?? "src/assets/gallery"}</LofiText>

@@ -9,6 +9,7 @@ export type AppScrollState = {
 
 export type AppComponentProps = {
   appId: string;
+  contentSize: { readonly width: number; readonly height: number };
   onScrollStateChange?: (state: AppScrollState | null) => void;
 };
 
