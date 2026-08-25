@@ -13,7 +13,6 @@ type Viewport = { width: number; height: number };
 export function WindowFrame({ app, window, viewport }: { app: AppManifest; window: ManagedWindow; viewport: Viewport }) {
   const { theme: { colors } } = useTheme();
   const dragOffset = useRef<{ left: number; top: number } | null>(null);
-  const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isScrollbarHovered, setIsScrollbarHovered] = useState(false);
   const [isScrollbarDragging, setIsScrollbarDragging] = useState(false);
@@ -27,7 +26,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
   const top = Math.min(window.top, maxTop);
   const contentPadding = app.contentPadding ?? 1;
   const hasOverflow = scrollState !== null && scrollState.size > scrollState.viewportSize;
-  const trackHeight = app.initialSize.height - 3 - contentPadding * 2;
+  const trackHeight = app.initialSize.height - 2 - contentPadding * 2;
   const thumbHeight = hasOverflow
     ? Math.max(1, Math.min(trackHeight, Math.round((scrollState.viewportSize / scrollState.size) * trackHeight)))
     : 0;
@@ -69,49 +68,14 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       <box
         flexGrow={1}
         border
-        borderStyle="single"
+        borderStyle="rounded"
         borderColor={colors.accent}
+        title={window.title}
+        titleColor={colors.accent}
+        titleAlignment="left"
         backgroundColor={colors.background}
         flexDirection="column"
       >
-        <box
-          height={1}
-          backgroundColor={isDragging ? colors.accent : isTitleHovered ? colors.secondary : colors.border}
-          onMouseOver={() => {
-            setIsTitleHovered(true);
-            renderer.setMousePointer("move");
-          }}
-          onMouseOut={() => {
-            if (!isDragging) setIsTitleHovered(false);
-            renderer.setMousePointer("default");
-          }}
-          onMouseDown={(event) => {
-            dispatchWindow(WindowCommand.Focus({ appId: app.id }));
-            dragOffset.current = { left: event.x - left, top: event.y - top };
-            setIsDragging(true);
-          }}
-        >
-          <box  flexDirection="row" alignItems="center">
-            <box flexGrow={1} height={1} alignItems="center" justifyContent="center">
-              <LofiText fg={isDragging ? colors.background : colors.accent} attributes={TextAttributes.BOLD}>{window.title}</LofiText>
-            </box>
-            <box width={4} height={1} alignItems="center" justifyContent="center" backgroundColor={colors.shadow} onMouseDown={(event) => {
-              event.stopPropagation();
-              dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
-            }}>
-              <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[_]</LofiText>
-            </box>
-            <box  height={1}  backgroundColor={colors.shadow} onMouseDown={(event) => {
-              event.stopPropagation();
-              playbackLifecycle.pauseBeforeAppClose(
-                app.id,
-                () => dispatchWindow(WindowCommand.Close({ appId: app.id })),
-              );
-            }}>
-              <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[X]</LofiText>
-            </box>
-          </box>
-        </box>
         <box flexGrow={1} flexDirection="row">
           <box flexGrow={1} padding={contentPadding}>
             {createElement(app.Component, { appId: app.id, onScrollStateChange: setScrollState })}
@@ -123,7 +87,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
               backgroundColor={colors.shadow}
               flexDirection="column"
               onMouseDown={(event) => {
-                const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 2 + contentPadding)));
+                const relativeY = Math.max(0, Math.min(trackHeight - 1, event.y - (top + 1 + contentPadding)));
                 const position = Math.round((relativeY / Math.max(1, trackHeight - 1)) * maxScroll);
                 scrollState.scrollTo(position);
               }}
@@ -143,7 +107,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
                 }}
                 onMouseDown={() => setIsScrollbarDragging(true)}
                 onMouseDrag={(event) => {
-                  const relativeY = Math.max(0, Math.min(trackHeight - thumbHeight, event.y - (top + 2 + contentPadding)));
+                  const relativeY = Math.max(0, Math.min(trackHeight - thumbHeight, event.y - (top + 1 + contentPadding)));
                   const position = Math.round((relativeY / Math.max(1, trackHeight - thumbHeight)) * maxScroll);
                   scrollState.scrollTo(position);
                 }}
@@ -151,6 +115,48 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
             </box>
           </box>}
         </box>
+      </box>
+      <box
+        position="absolute"
+        left={0}
+        top={0}
+        width={app.initialSize.width}
+        height={1}
+        flexDirection="row"
+        onMouseOver={() => renderer.setMousePointer("move")}
+        onMouseOut={() => renderer.setMousePointer("default")}
+        onMouseDown={(event) => {
+          dispatchWindow(WindowCommand.Focus({ appId: app.id }));
+          dragOffset.current = { left: event.x - left, top: event.y - top };
+          setIsDragging(true);
+        }}
+      >
+        <box flexGrow={1} />
+        <box
+          width={3}
+          height={1}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
+          }}
+        >
+          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[_]</LofiText>
+        </box>
+        <box width={1} />
+        <box
+          width={3}
+          height={1}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            playbackLifecycle.pauseBeforeAppClose(
+              app.id,
+              () => dispatchWindow(WindowCommand.Close({ appId: app.id })),
+            );
+          }}
+        >
+          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[X]</LofiText>
+        </box>
+        <box width={1} />
       </box>
     </box>
   );

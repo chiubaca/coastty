@@ -145,10 +145,10 @@ describe("window manager", () => {
       });
       await flush();
 
-      await mockMouse.pressDown(26, 6);
+      await mockMouse.pressDown(26, 5);
       expect(windowFrom(registry.get(windowManagerAtom)).zIndex).toBe(3);
-      await mockMouse.emitMouseEvent("drag", 26, 9);
-      await mockMouse.release(26, 9);
+      await mockMouse.emitMouseEvent("drag", 26, 8);
+      await mockMouse.release(26, 8);
 
       expect(windowFrom(registry.get(windowManagerAtom))).toMatchObject({ left: 24, top: 8 });
     } finally {

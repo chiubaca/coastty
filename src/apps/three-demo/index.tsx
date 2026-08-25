@@ -65,24 +65,24 @@ type SceneSettingsExport = {
 };
 
 const DEFAULT_SETTINGS: SceneSettingsExport = {
-  shape: "ICO",
+  shape: "TORUS",
   renderType: "MESH",
-  outlineWidth: "BOLD",
-  palette: "PINK",
+  outlineWidth: "THIN",
+  palette: "VIOLET",
   controls: {
     detail: 5,
-    fov: 44,
-    distance: 2,
+    fov: 28,
+    distance: 3.75,
     scale: 0.7,
     rotation: 0.30000000000000004,
-    wave: 3,
-    metalness: 1,
-    roughness: 0.7000000000000001,
+    wave: 0,
+    metalness: 0,
+    roughness: 0.20000000000000015,
     emissive: 0,
-    ambient: 4,
-    key: 8,
-    rim: 30,
-    opacity: 0.1,
+    ambient: 3.600000000000001,
+    key: 7.3999999999999995,
+    rim: 3,
+    opacity: 1,
   },
   paused: false,
 };
@@ -390,7 +390,6 @@ export function ThreeDemo({ appId }: AppComponentProps) {
   return (
     <box flexGrow={1} minWidth={1} flexDirection="column" backgroundColor={colors.background}>
       <box height={1} paddingX={1} justifyContent="space-between" backgroundColor={colors.shadow}>
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>WEBGPU // THREE.JS</LofiText>
         <LofiText fg={paused ? colors.highlight : colors.accent}>{paused ? "PAUSED" : "LIVE"}</LofiText>
       </box>
       <three
