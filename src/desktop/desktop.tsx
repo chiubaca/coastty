@@ -22,10 +22,10 @@ const DESKTOP_MENU_BAR_HEIGHT = 1;
 
 type DesktopTarget = "settings" | "about" | `app:${string}`;
 
-// Formats the local weekday and fixed-width 24-hour clock text.
+// Formats the local date with a fixed year and fixed-width 24-hour clock text.
 export function desktopClockParts(date: Date, colonVisible: boolean) {
   return {
-    weekday: date.toLocaleDateString("en-US", { weekday: "long" }),
+    date: `${date.toLocaleDateString("en-US", { weekday: "short" })} ${String(date.getDate()).padStart(2, "0")} ${date.toLocaleDateString("en-US", { month: "short" })} 1985`,
     time: `${String(date.getHours()).padStart(2, "0")}${colonVisible ? ":" : " "}${String(date.getMinutes()).padStart(2, "0")}`,
   };
 }
@@ -74,12 +74,12 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
     }) as const,
   });
   const desktopFocused = menuOwner.kind === "desktop";
-  const topbarLabel = `WAVE OS | ${menuOwner.name}`;
+  const topbarLabel = `🌴  ${menuOwner.name}`;
   const showDesktopMenu = desktopFocused && width >= topbarLabel.length + 21;
   const showTime = desktopFocused
     ? showDesktopMenu && width >= topbarLabel.length + 27
     : width >= topbarLabel.length + 8;
-  const showWeekday = showTime && width >= topbarLabel.length + (desktopFocused ? 38 : 19);
+  const showDate = showTime && width >= topbarLabel.length + (desktopFocused ? 44 : 25);
   const clock = desktopClockParts(now, now.getSeconds() % 2 === 0);
   const settingsMenuLeft = Math.max(0, Math.min(width - SETTINGS_MENU_WIDTH, topbarLabel.length + 3));
 
@@ -231,13 +231,12 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
       <box
         height={DESKTOP_MENU_BAR_HEIGHT}
         flexDirection="row"
-        backgroundColor={colors.highlight}
         onMouseDown={(event) => {
           event.stopPropagation();
           setSettingsOpen(false);
         }}
       >
-        <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{topbarLabel}</LofiText>
+        <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>{topbarLabel}</LofiText>
 
         {/* Settings and About are visible only while Desktop owns the menu. */}
         {showDesktopMenu && <box flexDirection="row" marginLeft={2}>
@@ -245,7 +244,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
             width={10}
             height={1}
             justifyContent="center"
-            backgroundColor={settingsHighlighted ? colors.background : colors.highlight}
+            backgroundColor={settingsHighlighted ? colors.highlight : undefined}
             onMouseOver={() => setHoveredTopbarControl("settings")}
             onMouseOut={() => setHoveredTopbarControl(null)}
             onMouseDown={(event) => {
@@ -254,7 +253,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               toggleSettings();
             }}
           >
-            <LofiText fg={settingsHighlighted ? colors.glow : colors.background} attributes={TextAttributes.BOLD}>
+            <LofiText fg={settingsHighlighted ? colors.background : colors.highlight}>
               Settings
             </LofiText>
           </box>
@@ -262,7 +261,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
             width={7}
             height={1}
             justifyContent="center"
-            backgroundColor={aboutHighlighted ? colors.background : colors.highlight}
+            backgroundColor={aboutHighlighted ? colors.highlight : undefined}
             onMouseOver={() => setHoveredTopbarControl("about")}
             onMouseOut={() => setHoveredTopbarControl(null)}
             onMouseDown={(event) => {
@@ -271,22 +270,19 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               openAbout();
             }}
           >
-            <LofiText fg={aboutHighlighted ? colors.accent : colors.background} attributes={TextAttributes.BOLD}>
+            <LofiText fg={aboutHighlighted ? colors.background : colors.highlight}>
               About
             </LofiText>
           </box>
         </box>}
 
-        {/* Clock keeps the time visible and adds the weekday when space allows. */}
+        {/* Clock keeps the time visible and adds the full date when space allows. */}
         {showTime && <box height={1} marginLeft="auto">
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>
-            {showWeekday ? `${clock.weekday}  ${clock.time}` : clock.time}
+          <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>
+            {showDate ? `${clock.date}  ${clock.time}` : clock.time}
           </LofiText>
         </box>}
       </box>
-
-      {/* Decorative desktop drive label. */}
-      {width >= 48 && <LofiText position="absolute" left={3} top={2} fg={colors.glowSoft} bg={colors.background} attributes={TextAttributes.DIM}>Macintosh HD</LofiText>}
 
       {/* Launchable app icons arranged across the desktop. */}
       {width >= DESKTOP_ICON_WIDTH && height >= DESKTOP_ICON_HEIGHT + 1 && desktopApps.map((app, index) => {

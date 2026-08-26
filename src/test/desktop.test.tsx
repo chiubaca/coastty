@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
+import { RGBA } from "@opentui/core";
 import { createRoot, flushSync } from "@opentui/react";
 import * as Registry from "@effect-atom/atom/Registry";
 import { RegistryContext } from "@effect-atom/atom-react/RegistryContext";
 import { createElement } from "react";
 import { aboutApp, apps, desktopApps } from "../apps/registry";
 import { Desktop, desktopClockParts } from "../desktop/desktop";
-import { ThemeProvider } from "../ui/theme";
+import { themes, ThemeProvider } from "../ui/theme";
 
 describe("desktop shell", () => {
   test("keeps About out of the desktop launcher", () => {
@@ -14,16 +15,16 @@ describe("desktop shell", () => {
     expect(desktopApps).not.toContain(aboutApp);
   });
 
-  test("formats a fixed-width 24-hour clock with a blinking separator", () => {
+  test("formats the fixed-year date and a fixed-width clock with a blinking separator", () => {
     const morning = new Date(2026, 7, 25, 9, 5, 0);
 
-    expect(desktopClockParts(morning, true)).toEqual({ weekday: "Tuesday", time: "09:05" });
-    expect(desktopClockParts(morning, false)).toEqual({ weekday: "Tuesday", time: "09 05" });
+    expect(desktopClockParts(morning, true)).toEqual({ date: "Tue 25 Aug 1985", time: "09:05" });
+    expect(desktopClockParts(morning, false)).toEqual({ date: "Tue 25 Aug 1985", time: "09 05" });
   });
 
   test("navigates Settings and About from the Desktop tab order", async () => {
     const registry = Registry.make();
-    const { renderer, mockInput, mockMouse, captureCharFrame, flush, waitForFrame } = await createTestRenderer({
+    const { renderer, mockInput, mockMouse, captureCharFrame, captureSpans, flush, waitForFrame } = await createTestRenderer({
       width: 100,
       height: 40,
     });
@@ -40,15 +41,18 @@ describe("desktop shell", () => {
         ),
       )));
       await flush();
-      await waitForFrame((frame) => frame.includes("WAVE OS | WAVE.FM"));
+      await waitForFrame((frame) => frame.includes("🌴  WAVE.FM"));
 
       let topbar = captureCharFrame().split("\n")[0] ?? "";
       expect(topbar).not.toContain("Settings");
       expect(topbar).not.toContain("About");
       expect(captureCharFrame()).not.toContain("File   Edit   View   Special");
+      const topbarSpans = captureSpans().lines[0]?.spans ?? [];
+      const background = RGBA.fromHex(themes.arcade.colors.background);
+      expect(topbarSpans.every((span) => span.bg.equals(background))).toBe(true);
 
       await mockMouse.click(70, 10);
-      await waitForFrame((frame) => frame.includes("WAVE OS | Desktop"));
+      await waitForFrame((frame) => frame.includes("🌴  Desktop"));
       const desktopFrame = captureCharFrame().split("\n");
       topbar = desktopFrame[0] ?? "";
       expect(topbar).toContain("Settings");
@@ -71,7 +75,7 @@ describe("desktop shell", () => {
       mockInput.pressTab();
       await flush();
       mockInput.pressEnter();
-      await waitForFrame((frame) => frame.includes("WAVE OS | ABOUT"));
+      await waitForFrame((frame) => frame.includes("🌴  ABOUT"));
       topbar = captureCharFrame().split("\n")[0] ?? "";
       expect(topbar).not.toContain("Settings");
       expect(topbar).not.toContain("About");
