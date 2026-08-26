@@ -10,7 +10,14 @@ import { useTheme } from "../ui/theme";
 
 type Viewport = { width: number; height: number };
 
-export function WindowFrame({ app, window, viewport }: { app: AppManifest; window: ManagedWindow; viewport: Viewport }) {
+type WindowFrameProps = {
+  readonly app: AppManifest;
+  readonly window: ManagedWindow;
+  readonly viewport: Viewport;
+  readonly onInteract?: () => void;
+};
+
+export function WindowFrame({ app, window, viewport, onInteract }: WindowFrameProps) {
   const { theme: { colors } } = useTheme();
   const dragOffset = useRef<{ left: number; top: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -59,7 +66,11 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
       zIndex={window.zIndex}
       backgroundColor={colors.background}
       flexDirection="column"
-      onMouseDown={() => dispatchWindow(WindowCommand.Focus({ appId: app.id }))}
+      onMouseDown={(event) => {
+        event.stopPropagation();
+        onInteract?.();
+        dispatchWindow(WindowCommand.Focus({ appId: app.id }));
+      }}
       onMouseDrag={(event) => {
         if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
       }}
@@ -141,6 +152,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           height={1}
           onMouseDown={(event) => {
             event.stopPropagation();
+            onInteract?.();
             dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
           }}
         >
@@ -152,6 +164,7 @@ export function WindowFrame({ app, window, viewport }: { app: AppManifest; windo
           height={1}
           onMouseDown={(event) => {
             event.stopPropagation();
+            onInteract?.();
             playbackLifecycle.pauseBeforeAppClose(
               app.id,
               () => dispatchWindow(WindowCommand.Close({ appId: app.id })),

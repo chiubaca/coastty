@@ -91,6 +91,15 @@ describe("window manager", () => {
     expect(focused).toBe(minimized);
   });
 
+  test("focusing Desktop preserves open windows", () => {
+    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
+    const desktopFocused = reduceWindowManager(opened, WindowCommand.FocusDesktop());
+
+    expect(desktopFocused.focusedAppId).toEqual(Option.none());
+    expect(desktopFocused.windows).toBe(opened.windows);
+    expect(windowFrom(desktopFocused)).toEqual(windowFrom(opened));
+  });
+
   test("atom registries isolate application state", () => {
     const first = Registry.make();
     const second = Registry.make();

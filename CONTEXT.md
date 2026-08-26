@@ -35,3 +35,19 @@ _Avoid_: Suspended, buffered pause
 **Playback Status**:
 The listener-facing condition of playback: Stopped before the first explicit Play, Connecting while opening a Station, Buffering while preparing audible playback, Playing while audio is live, Paused after an intentional interruption, Reconnecting during automatic recovery, or Error after playback cannot continue without a listener action.
 _Avoid_: Stream state, engine state
+
+**App Name**:
+The stable label that identifies an app in WAVE OS, independent of any changing document, station, or window title.
+_Avoid_: Window title, document title
+
+**System App**:
+An app launched through WAVE OS itself rather than from a desktop icon; once open, it behaves like any other app window.
+_Avoid_: Desktop app, hidden app
+
+**Desktop**:
+The WAVE OS workspace and focus state outside app windows; focusing it leaves open windows visible while making desktop controls active.
+_Avoid_: No app, empty state
+
+**Menu Owner**:
+The focused Desktop or App whose controls are presented in the WAVE OS topbar.
+_Avoid_: Global menu, active menu

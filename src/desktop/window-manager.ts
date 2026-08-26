@@ -26,6 +26,7 @@ export type WindowCommand = Data.TaggedEnum<{
   Minimize: { readonly appId: string };
   Restore: { readonly appId: string };
   Focus: { readonly appId: string };
+  FocusDesktop: {};
   Move: { readonly appId: string; readonly left: number; readonly top: number };
   SetTitle: { readonly appId: string; readonly title: string };
 }>;
@@ -118,6 +119,12 @@ function focusWindow(state: WindowManagerState, appId: string): WindowManagerSta
   });
 }
 
+function focusDesktop(state: WindowManagerState): WindowManagerState {
+  return Option.isNone(state.focusedAppId)
+    ? state
+    : updateState(state, { focusedAppId: Option.none() });
+}
+
 function moveWindow(state: WindowManagerState, appId: string, left: number, top: number): WindowManagerState {
   const maybeWindow = HashMap.get(state.windows, appId);
   if (Option.isNone(maybeWindow)) return state;
@@ -143,6 +150,7 @@ export function reduceWindowManager(state: WindowManagerState, command: WindowCo
     Minimize: ({ appId }) => minimizeWindow(state, appId),
     Restore: ({ appId }) => restoreWindow(state, appId),
     Focus: ({ appId }) => focusWindow(state, appId),
+    FocusDesktop: () => focusDesktop(state),
     Move: ({ appId, left, top }) => moveWindow(state, appId, left, top),
     SetTitle: ({ appId, title }) => setWindowTitle(state, appId, title),
   });

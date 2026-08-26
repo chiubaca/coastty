@@ -65,7 +65,10 @@ export function DesktopIcon({
       alignItems="center"
       onMouseOver={onMouseOver}
       onMouseOut={onMouseOut}
-      onMouseDown={onMouseDown}
+      onMouseDown={(event) => {
+        event.stopPropagation();
+        onMouseDown();
+      }}
     >
       <box width={3} height={2} position="relative" >
         <LofiText position="absolute" left={0.1} top={0.1} fg={colors.background} attributes={TextAttributes.DIM}>{app.icon}</LofiText>

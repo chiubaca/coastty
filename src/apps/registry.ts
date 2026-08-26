@@ -2,10 +2,11 @@ import { LofiPlayer } from "./lofi-player";
 import { TextEditor } from "./text-editor";
 import { ThreeDemo } from "./three-demo";
 import { ImageViewer } from "./image-viewer";
+import { About } from "./about";
 import { appIcon } from "./icons";
 import type { AppManifest } from "./types";
 
-export const apps: AppManifest[] = [
+export const desktopApps: AppManifest[] = [
   {
     id: "lofi-player",
     title: "WAVE.FM",
@@ -43,3 +44,16 @@ export const apps: AppManifest[] = [
     Component: ImageViewer,
   },
 ];
+
+export const aboutApp: AppManifest = {
+  id: "about",
+  title: "ABOUT",
+  icon: "i",
+  initialPosition: { left: 6, top: 3 },
+  initialSize: { width: 48, height: 12 },
+  contentPadding: 1,
+  Component: About,
+};
+
+export const systemApps: AppManifest[] = [aboutApp];
+export const apps: AppManifest[] = [...desktopApps, ...systemApps];

@@ -65,23 +65,25 @@ export const themes = {
 
 export type ThemeId = keyof typeof themes;
 
-const THEME_ORDER = ["phosphor", "amber", "arcade"] as const satisfies readonly ThemeId[];
+export const themeOrder = ["phosphor", "amber", "arcade"] as const satisfies readonly ThemeId[];
 const DEFAULT_THEME_ID: ThemeId = "arcade";
 
 export function nextThemeId(themeId: ThemeId): ThemeId {
-  const currentIndex = THEME_ORDER.indexOf(themeId);
-  return THEME_ORDER[(currentIndex + 1) % THEME_ORDER.length] ?? THEME_ORDER[0];
+  const currentIndex = themeOrder.indexOf(themeId);
+  return themeOrder[(currentIndex + 1) % themeOrder.length] ?? themeOrder[0];
 }
 
 type ThemeContextValue = {
   readonly themeId: ThemeId;
   readonly theme: (typeof themes)[ThemeId];
+  readonly setTheme: (themeId: ThemeId) => void;
   readonly cycleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
   themeId: DEFAULT_THEME_ID,
   theme: themes[DEFAULT_THEME_ID],
+  setTheme: () => {},
   cycleTheme: () => {},
 });
 
@@ -93,6 +95,7 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }) {
       value={{
         themeId,
         theme: themes[themeId],
+        setTheme: setThemeId,
         cycleTheme: () => setThemeId(nextThemeId),
       }}
     >
