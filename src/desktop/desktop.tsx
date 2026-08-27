@@ -94,6 +94,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
       app: player,
       position: initialCoasttyPlayerPosition(height, player.initialSize.height),
     }));
+    dispatchWindow(WindowCommand.FocusDesktop());
     if (autoplay) dispatchPlayback(PlaybackCommand.Play());
   }, [autoplay, dispatchPlayback, dispatchWindow, height]);
 

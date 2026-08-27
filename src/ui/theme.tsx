@@ -66,7 +66,7 @@ export const themes = {
 export type ThemeId = keyof typeof themes;
 
 export const themeOrder = ["phosphor", "amber", "arcade"] as const satisfies readonly ThemeId[];
-const DEFAULT_THEME_ID: ThemeId = "arcade";
+const DEFAULT_THEME_ID: ThemeId = "amber";
 
 export function nextThemeId(themeId: ThemeId): ThemeId {
   const currentIndex = themeOrder.indexOf(themeId);
