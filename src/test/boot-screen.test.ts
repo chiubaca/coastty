@@ -7,19 +7,16 @@ import { ThemeProvider } from "../ui/theme";
 
 describe("getBootFrame", () => {
   test("reveals BIOS checks before the title", () => {
-    expect(getBootFrame(0)).toMatchObject({ biosLineCount: 1, biosComplete: false, titleCharacterCount: 0 });
-    expect(getBootFrame(780)).toMatchObject({ biosLineCount: 3, biosComplete: false, titleCharacterCount: 0 });
+    expect(getBootFrame(0)).toMatchObject({ biosLineCount: 1, biosComplete: false, titleVisible: false });
+    expect(getBootFrame(780)).toMatchObject({ biosLineCount: 3, biosComplete: false, titleVisible: false });
     expect(getBootFrame(2_339)).toMatchObject({ biosLineCount: 6, biosComplete: false });
     expect(getBootFrame(2_340)).toMatchObject({ biosLineCount: 7, biosComplete: true });
   });
 
-  test("reveals the title from left to right", () => {
-    const firstTitleFrame = getBootFrame(3_375);
-    const laterTitleFrame = getBootFrame(3_945);
-
-    expect(firstTitleFrame.titleCharacterCount).toBe(1);
-    expect(laterTitleFrame.titleCharacterCount).toBe(11);
-    expect(BOOT_TITLE.slice(0, laterTitleFrame.titleCharacterCount)).toBe("////////// ");
+  test("shows the centered welcome title after startup", () => {
+    expect(BOOT_TITLE).toBe("Welcome to Coastty OS");
+    expect(getBootFrame(3_374).titleVisible).toBe(false);
+    expect(getBootFrame(3_375).titleVisible).toBe(true);
   });
 
   test("finishes after the title glow", () => {

@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { CoasttyText } from "./coastty-text";
 import { useTheme } from "./theme";
 
-export const BOOT_TITLE = "//////////  C O A S T T Y  //////////";
-const BOOT_WORD = "C O A S T T Y";
+const BOOT_GREETING = "Welcome to";
+const BOOT_WORD = "Coastty OS";
+export const BOOT_TITLE = `${BOOT_GREETING} ${BOOT_WORD}`;
 const BOOT_WORD_FONT = "tiny";
 const BOOT_WORD_SIZE = measureText({ text: BOOT_WORD, font: BOOT_WORD_FONT });
 
@@ -21,12 +22,9 @@ const BIOS_LINES = [
 
 const BIOS_LINE_INTERVAL_MS = 390;
 const TITLE_START_MS = 3_375;
-const TITLE_CHARACTER_INTERVAL_MS = 57;
-const GLOW_INTERVAL_MS = 210;
-const GLOW_DURATION_MS = 1_470;
+const TITLE_HOLD_DURATION_MS = 1_470;
 const ENTRY_BRACKET_INTERVAL_MS = 480;
-const GLOW_START_MS = TITLE_START_MS + BOOT_TITLE.length * TITLE_CHARACTER_INTERVAL_MS;
-export const BOOT_DURATION_MS = GLOW_START_MS + GLOW_DURATION_MS;
+export const BOOT_DURATION_MS = TITLE_START_MS + TITLE_HOLD_DURATION_MS;
 
 const SPINNER = ["-", "\\", "|", "/"] as const;
 
@@ -57,23 +55,17 @@ const ARCADE_BOOT_LOGO_COLORS = [
 export type BootFrame = {
   readonly biosLineCount: number;
   readonly biosComplete: boolean;
-  readonly titleCharacterCount: number;
-  readonly glowStep: number;
+  readonly titleVisible: boolean;
   readonly complete: boolean;
 };
 
 export function getBootFrame(elapsedMs: number): BootFrame {
   const elapsed = Math.max(0, elapsedMs);
-  const titleCharacterCount = Math.min(
-    BOOT_TITLE.length,
-    Math.max(0, Math.floor((elapsed - TITLE_START_MS) / TITLE_CHARACTER_INTERVAL_MS) + 1),
-  );
 
   return {
     biosLineCount: Math.min(BIOS_LINES.length, Math.floor(elapsed / BIOS_LINE_INTERVAL_MS) + 1),
     biosComplete: elapsed >= (BIOS_LINES.length - 1) * BIOS_LINE_INTERVAL_MS,
-    titleCharacterCount,
-    glowStep: elapsed < GLOW_START_MS ? 0 : Math.floor((elapsed - GLOW_START_MS) / GLOW_INTERVAL_MS),
+    titleVisible: elapsed >= TITLE_START_MS,
     complete: elapsed >= BOOT_DURATION_MS,
   };
 }
@@ -89,16 +81,10 @@ export function BootScreen({ onComplete }: BootScreenProps) {
   const [musicOn, setMusicOn] = useState(true);
   const compact = width < 68;
   const frame = getBootFrame(elapsedMs);
-  const titleGlyphCount = Math.min(10, Math.max(0, frame.titleCharacterCount - 1));
-  const titleGlyphs = "/".repeat(titleGlyphCount);
-  const expandedTitle = `${titleGlyphs}  ${" ".repeat(BOOT_WORD_SIZE.width)}  ${titleGlyphs}`;
-  const titleVisible = elapsedMs >= TITLE_START_MS;
   const entryAgeMs = Math.max(0, elapsedMs - BOOT_DURATION_MS);
   const entryBracketCount = Math.floor(entryAgeMs / ENTRY_BRACKET_INTERVAL_MS) % 4;
-  const entryBrackets = "[".repeat(entryBracketCount);
-  const entryPrompt = `${entryBrackets}CLICK TO ENTER${"]".repeat(entryBracketCount)}`;
-  const glowColors = [colors.accent, colors.glow, colors.white, colors.glowSoft] as const;
-  const glowColor = glowColors[frame.glowStep % glowColors.length];
+  const entryBrackets = "[ ".repeat(entryBracketCount);
+  const entryPrompt = `${entryBrackets}CLICK TO ENTER${" ]".repeat(entryBracketCount)}`;
   const spinner = SPINNER[Math.floor(elapsedMs / 150) % SPINNER.length];
   const logoStacksWithBios = width < BOOT_LOGO_WIDTH + 46;
   const showBootLogo = !frame.biosComplete && width >= BOOT_LOGO_WIDTH;
@@ -150,29 +136,28 @@ export function BootScreen({ onComplete }: BootScreenProps) {
         </box>
       )}
 
-      {titleVisible && (
+      {frame.titleVisible && (
         <box flexGrow={1} alignItems="center" justifyContent="center">
-          <box height={4} width={Math.max(expandedTitle.length, "[[[CLICK TO ENTER]]]".length)} alignItems="center" justifyContent="center">
-            <CoasttyText position="absolute" top={0} fg={colors.shadow} attributes={TextAttributes.DIM}>
-              {expandedTitle}
-            </CoasttyText>
-            <ascii-font position="absolute" top={1} text={BOOT_WORD} font={BOOT_WORD_FONT} color={glowColor} selectable={false} />
-            <CoasttyText position="absolute" top={3} fg={colors.shadow} attributes={TextAttributes.DIM}>
-              {expandedTitle}
-            </CoasttyText>
-            {frame.complete && (
-              <>
-                <CoasttyText position="absolute" top={5} fg={colors.shadow} attributes={TextAttributes.DIM}>
+          <box width={BOOT_WORD_SIZE.width} flexDirection="column" alignItems="center">
+            <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>{BOOT_GREETING}</CoasttyText>
+            <box height={1} />
+            <ascii-font text={BOOT_WORD} font={BOOT_WORD_FONT} color={colors.accent} selectable={false} />
+            <box height={1} />
+            <box height={3} flexDirection="column" alignItems="center">
+              {frame.complete && (
+                <>
+                <CoasttyText fg={colors.shadow} attributes={TextAttributes.DIM}>
                   {entryPrompt}
                 </CoasttyText>
-                <CoasttyText position="absolute" top={6} fg={colors.accent} attributes={TextAttributes.BOLD}>
+                <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>
                   {entryPrompt}
                 </CoasttyText>
-                <CoasttyText position="absolute" top={7} fg={colors.shadow} attributes={TextAttributes.DIM}>
+                <CoasttyText fg={colors.shadow} attributes={TextAttributes.DIM}>
                   {entryPrompt}
                 </CoasttyText>
-              </>
-            )}
+                </>
+              )}
+            </box>
           </box>
         </box>
       )}
