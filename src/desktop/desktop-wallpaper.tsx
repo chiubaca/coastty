@@ -4,7 +4,7 @@ import { THREE, ThreeRenderable, TextureUtils } from "@opentui/three";
 import * as Atom from "@effect-atom/atom/Atom";
 import { useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { useEffect, useRef, useState } from "react";
-import { LofiText } from "../ui/lofi-text";
+import { CoasttyText } from "../ui/coastty-text";
 
 declare module "@opentui/react" {
   interface OpenTUIComponents {
@@ -362,7 +362,7 @@ export function AsciiArtWallpaper({ width, height, top = 1 }: {
         />
       ))}
       {layers.map((layer, index) => (
-        <LofiText
+        <CoasttyText
           key={`${layer.top}:${layer.left}:${index}`}
           position="absolute"
           left={layer.left}
@@ -371,7 +371,7 @@ export function AsciiArtWallpaper({ width, height, top = 1 }: {
           attributes={(layer.dim ? TextAttributes.DIM : 0) | (layer.bold ? TextAttributes.BOLD : 0) || undefined}
         >
           {layer.text}
-        </LofiText>
+        </CoasttyText>
       ))}
     </box>
   );

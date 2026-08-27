@@ -4,7 +4,7 @@ Status: ready-for-agent
 
 ## Problem Statement
 
-lofi.fm currently offers one live Station, Nightwave Plaza. A listener who wants more operator-curated music cannot choose the operator's existing upbeat and lofi Audius collections, retain a personal position in either collection, pause and resume a track, or skip forward through a fixed order.
+CoasTTY currently offers one live Station, Nightwave Plaza. A listener who wants more operator-curated music cannot choose the operator's existing upbeat and lofi Audius collections, retain a personal position in either collection, pause and resume a track, or skip forward through a fixed order.
 
 The existing Station runtime cannot provide those behaviors. It opens one endless live URL, treats end-of-stream as failure, and rejoins the current live point after Pause. An Audius Playlist instead consists of finite tracks, has a listener-specific position, advances normally at the end of each track, and must continuously reflect an external Source Collection whose entries can be reordered, removed, deleted, deactivated, or become temporarily unstreamable.
 
@@ -31,7 +31,7 @@ Each device keeps one versioned cursor per Playlist. The cursor identifies the e
 7. As a listener, I want Play on a Playlist with no saved cursor to start its first playable entry, so that playback begins predictably.
 8. As a listener, I want Play on a Playlist with a valid saved cursor to resume the same Source Collection entry near my saved elapsed position, so that I do not repeatedly restart long tracks.
 9. As a listener, I want Pause to stop Playlist audio while retaining the current entry, elapsed position, and volume, so that I can continue later.
-10. As a listener, I want closing and reopening lofi.fm to preserve each Playlist's cursor on this device, so that a process restart does not erase my listening position.
+10. As a listener, I want closing and reopening CoasTTY to preserve each Playlist's cursor on this device, so that a process restart does not erase my listening position.
 11. As a listener, I want an unexpected process exit to lose at most a small amount of elapsed progress, so that device-local resume remains useful after a crash.
 12. As a listener, I want forward skip to move immediately to the next playable entry, so that I can pass a track without selecting another track directly.
 13. As a listener, I want skip on the final playable entry to loop to the first playable entry, so that a Playlist can continue indefinitely.
@@ -46,7 +46,7 @@ Each device keeps one versioned cursor per Playlist. The cursor identifies the e
 22. As a listener, I want a current entry that has become deleted, deactivated, unavailable, or unstreamable to restart at the first playable entry, so that playback does not attempt disallowed content.
 23. As a listener, I want a stream that fails during playback to try its available Audius mirrors before skipping, so that one unhealthy content node does not unnecessarily lose a track.
 24. As a listener, I want a track that fails across all stream candidates to be skipped immediately, so that one bad entry does not stop the Playlist.
-25. As a listener, I want repeated failures that leave too little playable music to make the Playlist unavailable, so that lofi.fm does not advertise a broken Playlist.
+25. As a listener, I want repeated failures that leave too little playable music to make the Playlist unavailable, so that CoasTTY does not advertise a broken Playlist.
 26. As a listener, I want an unavailable Upbeat Playlist not to disable Lofi when Lofi still passes its own release floor, so that independent collection problems remain isolated.
 27. As a listener, I want a shared Audius API or playback failure to be represented consistently for both Playlists, so that retry behavior is understandable.
 28. As a listener, I want a Playlist to become available again after a successful refresh restores its release floor, so that temporary provider problems do not require an application update.
@@ -65,10 +65,10 @@ Each device keeps one versioned cursor per Playlist. The cursor identifies the e
 41. As a listener, I do not want direct track selection, so that the Playlist remains a limited-control listening experience rather than a catalog browser.
 42. As a listener, I want corrupted or unsupported cursor data to fall back safely to the first playable entry, so that local state cannot prevent playback.
 43. As a listener, I want resume to restart the same track from its beginning when ranged restoration cannot be decoded, so that an imprecise resume never becomes a terminal failure.
-44. As an operator, I want the Audius Source Collections to remain authoritative, so that curation changes do not require a lofi.fm release.
+44. As an operator, I want the Audius Source Collections to remain authoritative, so that curation changes do not require a CoasTTY release.
 45. As an operator, I want deleted and deactivated flags honored even when an old stream URL still serves bytes, so that provider state overrides transport reachability.
 46. As an operator, I want each Playlist gated on at least 10 playable entries and 45 playable minutes, so that it has enough music to be listener-facing.
-47. As an operator, I want Source Collection data cached only in memory for the active session, so that lofi.fm does not depend on stale persisted provider data.
+47. As an operator, I want Source Collection data cached only in memory for the active session, so that CoasTTY does not depend on stale persisted provider data.
 48. As an operator, I want stream URLs acquired freshly and never stored in the device cursor, so that unknown signed URL lifetimes do not break later sessions.
 49. As an operator, I want supported Audius production API access used for reads, so that the integration does not depend on deprecated discovery hosts.
 50. As an operator, I want an optional read-only API key supplied through configuration rather than source code, so that higher rate limits can be used without embedding credentials.
@@ -159,7 +159,7 @@ Each device keeps one versioned cursor per Playlist. The cursor identifies the e
 - Usage analytics, royalty reporting, listening history, recommendations, favorites, reposts, comments, tips, or other Audius social features.
 - Supporting arbitrary Audius collections or allowing listeners to enter an Audius URL.
 - Multi-region load testing, an Audius SLA, or scale beyond the documented hobby limits and representative release smoke checks.
-- Redesigning the entire lofi.fm window or desktop visual language beyond the controls and directory distinctions needed for Playlists.
+- Redesigning the entire COAST.FM window or desktop visual language beyond the controls and directory distinctions needed for Playlists.
 
 ## Further Notes
 

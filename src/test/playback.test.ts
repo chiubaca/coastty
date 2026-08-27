@@ -109,7 +109,28 @@ class PendingEngine implements AudioEnginePort {
   }
 }
 
+class UnavailableEngine extends FakeEngine {
+  readonly playbackAvailable = false;
+}
+
 describe("streaming audio", () => {
+  test("does not start the native backend when no playback device is available", async () => {
+    const engine = new UnavailableEngine();
+
+    await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
+      const playback = yield* makeStreamingAudio({ create: () => engine });
+
+      yield* playback.dispatchAndWait(PlaybackCommand.Play());
+
+      expect(engine.started).toBe(false);
+      expect(engine.playCalls).toBe(0);
+      expect(yield* SubscriptionRef.get(playback.state)).toMatchObject({
+        status: "Error",
+        failure: "Playback device unavailable",
+      });
+    })));
+  });
+
   test("starts only after Play and releases the stream and device on Pause", async () => {
     const engine = new FakeEngine();
     let playback: StreamingAudioService;

@@ -1,4 +1,4 @@
-import { LofiPlayer } from "./lofi-player";
+import { CoasttyPlayer } from "./coastty-player";
 import { TextEditor } from "./text-editor";
 import { ThreeDemo } from "./three-demo";
 import { ImageViewer } from "./image-viewer";
@@ -8,13 +8,13 @@ import type { AppManifest } from "./types";
 
 export const desktopApps: AppManifest[] = [
   {
-    id: "lofi-player",
-    title: "WAVE.FM",
+    id: "coastty-player",
+    title: "COAST.FM",
     icon: appIcon({ glyph: "starter", fallback: ">" }),
     initialPosition: { left: 12, top: 3 },
     initialSize: { width: 60, height: 24 },
     contentPadding: 0,
-    Component: LofiPlayer,
+    Component: CoasttyPlayer,
   },
   {
     id: "text-editor",

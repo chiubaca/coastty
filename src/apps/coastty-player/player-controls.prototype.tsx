@@ -1,7 +1,7 @@
 import { TextAttributes, createCliRenderer } from "@opentui/core";
 import { createRoot, useKeyboard, useRenderer } from "@opentui/react";
 import { useState } from "react";
-import { LofiText } from "../../ui/lofi-text";
+import { CoasttyText } from "../../ui/coastty-text";
 import { ThemeProvider, type ThemeColors, useTheme } from "../../ui/theme";
 
 // THROWAWAY PROTOTYPE: four 46x16 player layouts, switchable with [ and ].
@@ -89,27 +89,27 @@ export function VariantA({
   return (
     <box flexGrow={1} flexDirection="column">
       <box height={5} border borderColor={colors.border} paddingX={1} flexDirection="column">
-        <LofiText fg={colors.muted}>NOW TUNED</LofiText>
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</LofiText>
-        <LofiText fg={status === "Error" ? colors.highlight : colors.accent}>
+        <CoasttyText fg={colors.muted}>NOW TUNED</CoasttyText>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</CoasttyText>
+        <CoasttyText fg={status === "Error" ? colors.highlight : colors.accent}>
           {status.toUpperCase()} // {statusDetail(status)}
-        </LofiText>
+        </CoasttyText>
       </box>
       <box height={1} flexDirection="row">
         <box flexGrow={1} justifyContent="center" backgroundColor={colors.highlight} onMouseDown={togglePlayback}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[ {playbackLabel(status)} ]</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>[ {playbackLabel(status)} ]</CoasttyText>
         </box>
         <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(-10)}>
-          <LofiText fg={colors.accent}>[-]</LofiText>
+          <CoasttyText fg={colors.accent}>[-]</CoasttyText>
         </box>
         <box width={9} justifyContent="center" backgroundColor={colors.border}>
-          <LofiText fg={colors.glow}>{volume}%</LofiText>
+          <CoasttyText fg={colors.glow}>{volume}%</CoasttyText>
         </box>
         <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(10)}>
-          <LofiText fg={colors.accent}>[+]</LofiText>
+          <CoasttyText fg={colors.accent}>[+]</CoasttyText>
         </box>
       </box>
-      <LofiText fg={colors.muted}>STATION PRESETS</LofiText>
+      <CoasttyText fg={colors.muted}>STATION PRESETS</CoasttyText>
       <box flexGrow={1} flexDirection="row" flexWrap="wrap">
         {stations.map((candidate, index) => (
           <box
@@ -120,12 +120,12 @@ export function VariantA({
             backgroundColor={index === selectedIndex ? colors.accent : colors.shadow}
             onMouseDown={candidate.available ? () => selectStation(index) : undefined}
           >
-            <LofiText
+            <CoasttyText
               fg={index === selectedIndex ? colors.background : candidate.available ? colors.primary : colors.muted}
               attributes={index === selectedIndex ? TextAttributes.BOLD : undefined}
             >
               {candidate.id}. {candidate.name}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
@@ -148,7 +148,7 @@ export function VariantB({
     <box flexGrow={1} flexDirection="row">
       <box width={22} flexDirection="column" backgroundColor={colors.shadow}>
         <box height={1} justifyContent="center" backgroundColor={colors.border}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>STATIONS</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>STATIONS</CoasttyText>
         </box>
         {stations.map((candidate, index) => (
           <box
@@ -159,34 +159,34 @@ export function VariantB({
             backgroundColor={index === selectedIndex ? colors.accent : colors.background}
             onMouseDown={candidate.available ? () => selectStation(index) : undefined}
           >
-            <LofiText
+            <CoasttyText
               fg={index === selectedIndex ? colors.background : candidate.available ? colors.primary : colors.muted}
               attributes={index === selectedIndex ? TextAttributes.BOLD : undefined}
             >
               {index === selectedIndex ? ">" : " "} {candidate.id} {candidate.name}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
       <box flexGrow={1} flexDirection="column" paddingLeft={1}>
-        <LofiText fg={colors.muted}>SELECTED</LofiText>
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</LofiText>
+        <CoasttyText fg={colors.muted}>SELECTED</CoasttyText>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</CoasttyText>
         <box height={3} marginTop={1} paddingX={1} backgroundColor={status === "Error" ? colors.border : colors.shadow}>
-          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>{status.toUpperCase()}</LofiText>
-          <LofiText fg={colors.primary}>{statusDetail(status)}</LofiText>
+          <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>{status.toUpperCase()}</CoasttyText>
+          <CoasttyText fg={colors.primary}>{statusDetail(status)}</CoasttyText>
         </box>
         <box height={1} marginTop={1} justifyContent="center" backgroundColor={colors.highlight} onMouseDown={togglePlayback}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{playbackLabel(status)}</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>{playbackLabel(status)}</CoasttyText>
         </box>
         <box height={1} flexDirection="row">
           <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(-10)}>
-            <LofiText fg={colors.accent}>-</LofiText>
+            <CoasttyText fg={colors.accent}>-</CoasttyText>
           </box>
           <box flexGrow={1} justifyContent="center" backgroundColor={colors.border}>
-            <LofiText fg={colors.glow}>VOL {volume}</LofiText>
+            <CoasttyText fg={colors.glow}>VOL {volume}</CoasttyText>
           </box>
           <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(10)}>
-            <LofiText fg={colors.accent}>+</LofiText>
+            <CoasttyText fg={colors.accent}>+</CoasttyText>
           </box>
         </box>
       </box>
@@ -209,12 +209,12 @@ export function VariantC({
   return (
     <box flexGrow={1} flexDirection="column">
       <box height={1} flexDirection="row" backgroundColor={colors.border}>
-        <LofiText fg={colors.background} attributes={TextAttributes.BOLD}> SIGNAL BANK </LofiText>
-        <LofiText fg={colors.highlight}> {status.toUpperCase()} </LofiText>
+        <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}> SIGNAL BANK </CoasttyText>
+        <CoasttyText fg={colors.highlight}> {status.toUpperCase()} </CoasttyText>
       </box>
       <box height={4} border borderColor={colors.border} paddingX={1} flexDirection="column">
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{String(selectedIndex + 1).padStart(2, "0")} // {station.name}</LofiText>
-        <LofiText fg={status === "Error" ? colors.highlight : colors.primary}>{statusDetail(status)}</LofiText>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{String(selectedIndex + 1).padStart(2, "0")} // {station.name}</CoasttyText>
+        <CoasttyText fg={status === "Error" ? colors.highlight : colors.primary}>{statusDetail(status)}</CoasttyText>
       </box>
       <box height={1} flexDirection="row" gap={1}>
         {stations.map((candidate, index) => (
@@ -226,31 +226,31 @@ export function VariantC({
             backgroundColor={index === selectedIndex ? colors.accent : colors.shadow}
             onMouseDown={candidate.available ? () => selectStation(index) : undefined}
           >
-            <LofiText
+            <CoasttyText
               fg={index === selectedIndex ? colors.background : candidate.available ? colors.primary : colors.muted}
               attributes={index === selectedIndex ? TextAttributes.BOLD : undefined}
             >
               {candidate.id}:{candidate.shortName}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
       <box height={2} marginTop={1} flexDirection="row">
         <box width={14} justifyContent="center" backgroundColor={colors.highlight} onMouseDown={togglePlayback}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[{playbackLabel(status)}]</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>[{playbackLabel(status)}]</CoasttyText>
         </box>
         <box flexGrow={1} paddingLeft={1} flexDirection="column" backgroundColor={colors.shadow}>
-          <LofiText fg={colors.primary}>OUTPUT {volume}%</LofiText>
-          <LofiText fg={colors.accent}>[{"#".repeat(meterWidth)}{"-".repeat(10 - meterWidth)}]</LofiText>
+          <CoasttyText fg={colors.primary}>OUTPUT {volume}%</CoasttyText>
+          <CoasttyText fg={colors.accent}>[{"#".repeat(meterWidth)}{"-".repeat(10 - meterWidth)}]</CoasttyText>
         </box>
         <box width={3} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => adjustVolume(-10)}>
-          <LofiText fg={colors.highlight}>-</LofiText>
+          <CoasttyText fg={colors.highlight}>-</CoasttyText>
         </box>
         <box width={3} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => adjustVolume(10)}>
-          <LofiText fg={colors.highlight}>+</LofiText>
+          <CoasttyText fg={colors.highlight}>+</CoasttyText>
         </box>
       </box>
-      <LofiText fg={colors.muted}>1-5 STATION  SPACE PLAY/PAUSE  +/- VOLUME</LofiText>
+      <CoasttyText fg={colors.muted}>1-5 STATION  SPACE PLAY/PAUSE  +/- VOLUME</CoasttyText>
     </box>
   );
 }
@@ -270,7 +270,7 @@ export function VariantD({
     <box flexGrow={1} flexDirection="row">
       <box width={21} flexDirection="column" backgroundColor={colors.shadow}>
         <box height={1} justifyContent="center" backgroundColor={colors.border}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>STATIONS</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>STATIONS</CoasttyText>
         </box>
         {stations.map((candidate, index) => (
           <box
@@ -281,38 +281,38 @@ export function VariantD({
             backgroundColor={index === selectedIndex ? colors.accent : colors.background}
             onMouseDown={candidate.available ? () => selectStation(index) : undefined}
           >
-            <LofiText
+            <CoasttyText
               fg={index === selectedIndex ? colors.background : candidate.available ? colors.primary : colors.muted}
               attributes={index === selectedIndex ? TextAttributes.BOLD : undefined}
             >
               {index === selectedIndex ? ">" : " "} {candidate.id} {candidate.name}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
       <box flexGrow={1} paddingLeft={1} flexDirection="column">
         <box height={8} border borderColor={colors.border} paddingX={1} flexDirection="column">
-          <LofiText fg={colors.muted}>NOW TUNED</LofiText>
-          <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</LofiText>
-          <LofiText fg={colors.primary}>ARTIST Sample</LofiText>
-          <LofiText fg={colors.primary}>TITLE  Sample</LofiText>
-          <LofiText fg={status === "Error" ? colors.highlight : colors.accent} attributes={TextAttributes.BOLD}>
+          <CoasttyText fg={colors.muted}>NOW TUNED</CoasttyText>
+          <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{station.name}</CoasttyText>
+          <CoasttyText fg={colors.primary}>ARTIST Sample</CoasttyText>
+          <CoasttyText fg={colors.primary}>TITLE  Sample</CoasttyText>
+          <CoasttyText fg={status === "Error" ? colors.highlight : colors.accent} attributes={TextAttributes.BOLD}>
             {status.toUpperCase()}
-          </LofiText>
-          <LofiText fg={colors.primary}>{statusDetail(status)}</LofiText>
+          </CoasttyText>
+          <CoasttyText fg={colors.primary}>{statusDetail(status)}</CoasttyText>
         </box>
         <box height={1} marginTop={1} justifyContent="center" backgroundColor={colors.highlight} onMouseDown={togglePlayback}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[ {playbackLabel(status)} ]</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>[ {playbackLabel(status)} ]</CoasttyText>
         </box>
         <box height={1} flexDirection="row">
           <box width={4} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(-10)}>
-            <LofiText fg={colors.accent}>[-]</LofiText>
+            <CoasttyText fg={colors.accent}>[-]</CoasttyText>
           </box>
           <box flexGrow={1} justifyContent="center" backgroundColor={colors.border}>
-            <LofiText fg={colors.glow}>VOL {volume}</LofiText>
+            <CoasttyText fg={colors.glow}>VOL {volume}</CoasttyText>
           </box>
           <box width={4} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => adjustVolume(10)}>
-            <LofiText fg={colors.accent}>[+]</LofiText>
+            <CoasttyText fg={colors.accent}>[+]</CoasttyText>
           </box>
         </box>
       </box>
@@ -406,15 +406,15 @@ function PlayerControlsPrototype() {
 
   return (
     <box flexGrow={1} backgroundColor={colors.background} alignItems="center" justifyContent="center">
-      <LofiText position="absolute" top={1} fg={colors.muted} attributes={TextAttributes.DIM}>
+      <CoasttyText position="absolute" top={1} fg={colors.muted} attributes={TextAttributes.DIM}>
         THROWAWAY PLAYER-CONTROLS PROTOTYPE // EXACT 46x16 WINDOW
-      </LofiText>
+      </CoasttyText>
       <box width={46} height={16} border borderColor={colors.accent} flexDirection="column" backgroundColor={colors.background}>
         <box height={1} flexDirection="row" backgroundColor={colors.border}>
           <box flexGrow={1} justifyContent="center">
-            <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>lofi.fm - {stations[selectedIndex]?.name}</LofiText>
+            <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>COAST.FM - {stations[selectedIndex]?.name}</CoasttyText>
           </box>
-          <LofiText fg={colors.accent}>[_][X]</LofiText>
+          <CoasttyText fg={colors.accent}>[_][X]</CoasttyText>
         </box>
         <box flexGrow={1} padding={1}>
           {variant === "A" && <VariantA {...props} />}
@@ -425,18 +425,18 @@ function PlayerControlsPrototype() {
       </box>
       <box position="absolute" bottom={2} left={2} right={2} height={1} flexDirection="row" justifyContent="center" gap={1}>
         <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => cycleVariant(-1)}>
-          <LofiText fg={colors.accent}>[</LofiText>
+          <CoasttyText fg={colors.accent}>[</CoasttyText>
         </box>
         <box width={24} justifyContent="center" backgroundColor={colors.highlight}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>{selectedVariant.key} - {selectedVariant.name}</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>{selectedVariant.key} - {selectedVariant.name}</CoasttyText>
         </box>
         <box width={3} justifyContent="center" backgroundColor={colors.shadow} onMouseDown={() => cycleVariant(1)}>
-          <LofiText fg={colors.accent}>]</LofiText>
+          <CoasttyText fg={colors.accent}>]</CoasttyText>
         </box>
       </box>
-      <LofiText position="absolute" bottom={0} fg={colors.muted}>
+      <CoasttyText position="absolute" bottom={0} fg={colors.muted}>
         [/] OR TAB: VARIANT  S: STATUS  E: ERROR  ESC: EXIT
-      </LofiText>
+      </CoasttyText>
     </box>
   );
 }

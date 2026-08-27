@@ -15,7 +15,7 @@ import {
   type PlaybackStatus,
   type PlaylistChoice,
 } from "../../radio/playback";
-import { LofiText } from "../../ui/lofi-text";
+import { CoasttyText } from "../../ui/coastty-text";
 import { themes, useTheme, type ThemeColors } from "../../ui/theme";
 
 declare module "@opentui/react" {
@@ -56,7 +56,7 @@ export function visualizerForKey(key: Pick<KeyEvent, "sequence">): Visualizer | 
   return null;
 }
 
-type LofiPlayerViewProps = {
+type CoasttyPlayerViewProps = {
   readonly snapshot: PlaybackSnapshot;
   readonly dispatch: (command: PlaybackCommandType) => void;
   readonly colors?: ThemeColors;
@@ -90,7 +90,7 @@ function PlayerSidebar({
   return (
     <box width={29} flexShrink={0} flexDirection="column" backgroundColor={colors.background}>
       <box height={1} paddingLeft={1} flexDirection="row" backgroundColor={colors.shadow} onMouseDown={close}>
-        <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[-] LIBRARY</LofiText>
+        <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>[-] LIBRARY</CoasttyText>
       </box>
       <box height={1} flexDirection="row">
         <box
@@ -99,7 +99,7 @@ function PlayerSidebar({
           backgroundColor={section === "radio" ? colors.accent : colors.border}
           onMouseDown={() => setSection("radio")}
         >
-          <LofiText fg={section === "radio" ? colors.background : colors.primary} attributes={TextAttributes.BOLD}>RADIO</LofiText>
+          <CoasttyText fg={section === "radio" ? colors.background : colors.primary} attributes={TextAttributes.BOLD}>RADIO</CoasttyText>
         </box>
         <box
           flexGrow={1}
@@ -107,7 +107,7 @@ function PlayerSidebar({
           backgroundColor={section === "playlists" ? colors.accent : colors.border}
           onMouseDown={() => setSection("playlists")}
         >
-          <LofiText fg={section === "playlists" ? colors.background : colors.primary} attributes={TextAttributes.BOLD}>PLAYLISTS</LofiText>
+          <CoasttyText fg={section === "playlists" ? colors.background : colors.primary} attributes={TextAttributes.BOLD}>PLAYLISTS</CoasttyText>
         </box>
       </box>
 
@@ -125,12 +125,12 @@ function PlayerSidebar({
                 backgroundColor={selected ? colors.shadow : colors.background}
                 onMouseDown={available ? () => dispatch(PlaybackCommand.Select({ choice: { _tag: "Station", id: choice.id } })) : undefined}
               >
-                <LofiText
+                <CoasttyText
                   fg={selected ? colors.glow : available ? colors.primary : colors.muted}
                   attributes={selected ? TextAttributes.BOLD : available ? undefined : TextAttributes.DIM}
                 >
                   {selected ? ">" : " "} {String(index + 1).padStart(2, "0")} {choice.name.toUpperCase()}
-                </LofiText>
+                </CoasttyText>
               </box>
             );
           })}
@@ -151,17 +151,17 @@ function PlayerSidebar({
                   dispatch(PlaybackCommand.Select({ choice: { _tag: "Playlist", id: choice.id } }));
                 } : undefined}
               >
-                <LofiText
+                <CoasttyText
                   fg={selected ? colors.glow : choice.available ? colors.primary : colors.muted}
                   attributes={selected ? TextAttributes.BOLD : choice.available ? undefined : TextAttributes.DIM}
                 >
                   {selected ? ">" : browsing ? "+" : " "} {choice.name.toUpperCase()}{choice.available ? `  ${choice.playableEntries}` : "  OFFLINE"}
-                </LofiText>
+                </CoasttyText>
               </box>
             );
           })}
           <box height={1} paddingLeft={1} backgroundColor={colors.border}>
-            <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>TRACKS // {browsePlaylist.name.toUpperCase()}</LofiText>
+            <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>TRACKS // {browsePlaylist.name.toUpperCase()}</CoasttyText>
           </box>
           <scrollbox flexGrow={1} backgroundColor={colors.background}>
             {browsePlaylist.tracks.map((track, index) => {
@@ -179,15 +179,15 @@ function PlayerSidebar({
                     entryId: track.entryId,
                   }))}
                 >
-                  <LofiText fg={selected ? colors.glow : colors.primary} attributes={selected ? TextAttributes.BOLD : undefined}>
+                  <CoasttyText fg={selected ? colors.glow : colors.primary} attributes={selected ? TextAttributes.BOLD : undefined}>
                     {selected ? ">" : " "} {String(index + 1).padStart(2, "0")} {track.title ?? "UNTITLED"} - {track.artist ?? "UNKNOWN"}
-                  </LofiText>
+                  </CoasttyText>
                 </box>
               );
             })}
             {browsePlaylist.tracks.length === 0 ? (
               <box height={2} paddingLeft={1} justifyContent="center">
-                <LofiText fg={colors.muted}>SCANNING PLAYLIST...</LofiText>
+                <CoasttyText fg={colors.muted}>SCANNING PLAYLIST...</CoasttyText>
               </box>
             ) : null}
           </scrollbox>
@@ -344,7 +344,7 @@ function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly numb
     <box flexGrow={1} minHeight={1} backgroundColor={colors.background}>
       <three flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
       <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>WAVE {wave.toFixed(1)} / 3.0</LofiText>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>WAVE {wave.toFixed(1)} / 3.0</CoasttyText>
       </box>
     </box>
   );
@@ -373,7 +373,7 @@ function PlaylistSeekBar({
   return (
     <box height={1} paddingX={1} flexDirection="row" alignItems="center" backgroundColor={colors.background}>
       <box width={7} justifyContent="center">
-        <LofiText fg={colors.primary}>{formatTime(positionSeconds)}</LofiText>
+        <CoasttyText fg={colors.primary}>{formatTime(positionSeconds)}</CoasttyText>
       </box>
       <box
         ref={bar}
@@ -390,19 +390,19 @@ function PlaylistSeekBar({
         <box width={`${progress * 100}%`} height={1} backgroundColor={colors.accent} />
       </box>
       <box width={7} justifyContent="center">
-        <LofiText fg={colors.primary}>{formatTime(durationSeconds)}</LofiText>
+        <CoasttyText fg={colors.primary}>{formatTime(durationSeconds)}</CoasttyText>
       </box>
     </box>
   );
 }
 
-export function LofiPlayerView({
+export function CoasttyPlayerView({
   snapshot,
   dispatch,
   colors = themes.phosphor.colors,
   focused = true,
   sidebarInitiallyOpen = false,
-}: LofiPlayerViewProps) {
+}: CoasttyPlayerViewProps) {
   const initialPlaylist = snapshot.selected._tag === "Playlist"
     ? snapshot.selected
     : snapshot.directory.playlists[0]!;
@@ -480,15 +480,15 @@ export function LofiPlayerView({
           <box height={1} paddingX={1} flexDirection="row" justifyContent="space-between">
             {!sidebarOpen ? (
               <box paddingX={1} backgroundColor={colors.shadow} onMouseDown={() => setSidebarOpen(true)}>
-                <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[+] LIBRARY</LofiText>
+                <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>[+] LIBRARY</CoasttyText>
               </box>
             ) : <box />}
-            <LofiText
+            <CoasttyText
               fg={snapshot.status === "Error" ? colors.highlight : colors.muted}
               attributes={snapshot.status === "Playing" ? TextAttributes.BOLD : TextAttributes.DIM}
             >
               {snapshot.status.toUpperCase()}
-            </LofiText>
+            </CoasttyText>
           </box>
           {visualizer === "Bars"
             ? <Spectrum spectrum={snapshot.spectrum} colors={colors} />
@@ -497,7 +497,7 @@ export function LofiPlayerView({
       </box>
 
       <box height={1} paddingLeft={1} backgroundColor={colors.shadow}>
-        <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{marquee}</LofiText>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{marquee}</CoasttyText>
       </box>
       {playlistSelected && snapshot.track ? (
         <PlaylistSeekBar
@@ -513,21 +513,21 @@ export function LofiPlayerView({
           justifyContent="center"
           onMouseDown={playlistSelected ? () => dispatch(PlaybackCommand.Previous()) : undefined}
         >
-          <LofiText fg={playlistSelected ? colors.accent : colors.muted}>|&lt; PREV</LofiText>
+          <CoasttyText fg={playlistSelected ? colors.accent : colors.muted}>|&lt; PREV</CoasttyText>
         </box>
-        <LofiText fg={colors.muted}> | </LofiText>
+        <CoasttyText fg={colors.muted}> | </CoasttyText>
         <box width={8} justifyContent="center" backgroundColor={colors.accent} onMouseDown={togglePlayback}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>
             {snapshot.status === "Error" ? "! RETRY" : canPause ? "|| PAUSE" : "> PLAY"}
-          </LofiText>
+          </CoasttyText>
         </box>
-        <LofiText fg={colors.muted}> | </LofiText>
+        <CoasttyText fg={colors.muted}> | </CoasttyText>
         <box
           width={8}
           justifyContent="center"
           onMouseDown={playlistSelected ? () => dispatch(PlaybackCommand.Skip()) : undefined}
         >
-          <LofiText fg={playlistSelected ? colors.accent : colors.muted}>NEXT &gt;|</LofiText>
+          <CoasttyText fg={playlistSelected ? colors.accent : colors.muted}>NEXT &gt;|</CoasttyText>
         </box>
       </box>
       <box height={1} flexDirection="row" backgroundColor={colors.shadow}>
@@ -537,7 +537,7 @@ export function LofiPlayerView({
           backgroundColor={visualizer === "Bars" ? colors.accent : colors.shadow}
           onMouseDown={() => setVisualizer("Bars")}
         >
-          <LofiText fg={visualizer === "Bars" ? colors.background : colors.primary} attributes={visualizer === "Bars" ? TextAttributes.BOLD : undefined}>[1] BARS</LofiText>
+          <CoasttyText fg={visualizer === "Bars" ? colors.background : colors.primary} attributes={visualizer === "Bars" ? TextAttributes.BOLD : undefined}>[1] BARS</CoasttyText>
         </box>
         <box
           flexGrow={1}
@@ -545,14 +545,14 @@ export function LofiPlayerView({
           backgroundColor={visualizer === "3D Blob" ? colors.accent : colors.shadow}
           onMouseDown={() => setVisualizer("3D Blob")}
         >
-          <LofiText fg={visualizer === "3D Blob" ? colors.background : colors.primary} attributes={visualizer === "3D Blob" ? TextAttributes.BOLD : undefined}>[2] BLOB</LofiText>
+          <CoasttyText fg={visualizer === "3D Blob" ? colors.background : colors.primary} attributes={visualizer === "3D Blob" ? TextAttributes.BOLD : undefined}>[2] BLOB</CoasttyText>
         </box>
       </box>
     </box>
   );
 }
 
-export function LofiPlayer({ appId }: AppComponentProps) {
+export function CoasttyPlayer({ appId }: AppComponentProps) {
   const { theme: { colors } } = useTheme();
   const snapshot = useAtomValue(playbackStateAtom);
   const focused = useAtomValue(windowFocusedAtom(appId));
@@ -560,8 +560,8 @@ export function LofiPlayer({ appId }: AppComponentProps) {
   const dispatchWindow = useAtomSet(windowManagerAtom);
 
   useEffect(() => {
-    dispatchWindow(WindowCommand.SetTitle({ appId, title: `lofi.fm - ${snapshot.selected.name}` }));
+    dispatchWindow(WindowCommand.SetTitle({ appId, title: `COAST.FM - ${snapshot.selected.name}` }));
   }, [appId, dispatchWindow, snapshot.selected.name]);
 
-  return <LofiPlayerView snapshot={snapshot} dispatch={dispatchPlayback} colors={colors} focused={focused} />;
+  return <CoasttyPlayerView snapshot={snapshot} dispatch={dispatchPlayback} colors={colors} focused={focused} />;
 }

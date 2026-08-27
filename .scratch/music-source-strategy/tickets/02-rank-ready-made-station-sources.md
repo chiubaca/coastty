@@ -8,7 +8,7 @@ Blocked by: none
 
 ## Question
 
-Which publicly reachable ready-made Stations best expand lofi.fm's focused and adjacent musical range at hobby scale? Refresh and broaden the prior [Lawful and Dependable Stations](../../real-streaming-player/research/lawful-dependable-stations.md) research, then rank candidates by musical fit, endpoint format and stability, metadata and attribution quality, worldwide reach evidence, provider terms and rights uncertainty, and compatibility with the current direct-stream integration contract. Create a linked research asset that distinguishes observed facts from unresolved risk.
+Which publicly reachable ready-made Stations best expand CoasTTY's focused and adjacent musical range at hobby scale? Refresh and broaden the prior [Lawful and Dependable Stations](../../real-streaming-player/research/lawful-dependable-stations.md) research, then rank candidates by musical fit, endpoint format and stability, metadata and attribution quality, worldwide reach evidence, provider terms and rights uncertainty, and compatibility with the current direct-stream integration contract. Create a linked research asset that distinguishes observed facts from unresolved risk.
 
 ## Comments
 

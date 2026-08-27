@@ -4,7 +4,7 @@ Research date: 2026-08-19
 
 ## Question and scope
 
-This note compares two ways lofi.fm could play an operator-curated music catalog:
+This note compares two ways CoasTTY could play an operator-curated music catalog:
 
 - **Shared continuously programmed Station:** one operator-controlled program clock produces a continuous linear stream. Every listener who presses Play joins the same current point.
 - **Independent per-listener Playlist:** each listener has a separate playback cursor over operator-curated audio files. A listener ordinarily starts at a track boundary and can retain a position independently of everyone else; track selection, skip, seek, and resume are product choices rather than necessary properties of the transport.
@@ -19,7 +19,7 @@ The comparison is a decision aid, not a model selection or legal opinion. The op
 | Rights category | Can fit linear/noninteractive webcasting if the complete service satisfies the applicable territory's conditions. This is eligibility, not automatic permission. | A separate cursor alone does not determine the category. Personalization, foreknowledge, track choice, on-demand access, pause/resume, skip, shuffle, or caching can move the service into customized, interactive, or direct-licence categories. |
 | Reporting | One authoritative playout log can be combined with listener connection intervals, but current-track metadata alone is insufficient. | The service can record each listener's actual track events directly, but needs a trustworthy event pipeline and contract-specific usage accounting. |
 | Catalog | Needs lawful source copies, complete identifiers, a schedule, enough depth for rotation rules, and rights for linear transmission and required server copies. | Needs the same asset quality plus grants broad enough for the exact per-listener controls, on-demand delivery, territories, and any temporary copies or offline behavior. Direct object URLs do not carry music rights. |
-| Current lofi.fm fit | Direct fit with the existing Station language, join-live Pause semantics, direct stream URL integration, ICY metadata, and reconnect lifecycle. | A new playback concept and runtime are required: queue/cursor state, finite-track transitions, end-of-track behavior, and probably progress/resume policy. |
+| Current COAST.FM fit | Direct fit with the existing Station language, join-live Pause semantics, direct stream URL integration, ICY metadata, and reconnect lifecycle. | A new playback concept and runtime are required: queue/cursor state, finite-track transitions, end-of-track behavior, and probably progress/resume policy. |
 | Managed services | Mature radio-specific SaaS and self-hosted stacks exist, including AutoDJ, scheduling, stream fan-out, listener analytics, and playout reports. Some services bundle limited-territory licensing. | Managed storage/CDN is cheap and mature, but it is infrastructure rather than a turnkey worldwide licensed music service. Consumer music APIs do not provide a drop-in catalog for this product. |
 | Metadata | The playout system emits one current artist/title feed, commonly ICY or an Icecast status API. Reporting still needs durable catalog and playout records. | The catalog can supply exact per-track metadata before playback and richer fields, while client/server events identify what each listener received. |
 | Reliability | One program clock simplifies clients but creates a station-wide failure domain at the playout/source layer. Relays and managed AutoDJ can reduce origin risk. | Static objects distribute and cache well; one broken object can affect only that track/session. More client and control-plane state creates more transition and accounting failure modes. |
@@ -32,7 +32,7 @@ The comparison is a decision aid, not a model selection or legal opinion. The op
 
 Icecast's documented topology is one source client feeding a mountpoint while listeners connect to that mountpoint. The server sends the stream to each listener.[1] That produces one shared program clock even though each listener has a separate network connection.
 
-This is exactly lofi.fm's current behavior and language:
+This is exactly CoasTTY's current behavior and language:
 
 - A Station is identified by musical character, not an individual track.
 - Pressing Play joins the Station at its current live point.
@@ -115,7 +115,7 @@ The operator needs all of the core metadata and provenance above, plus:
 
 This can narrow the usable source pool: a catalog licensed for noninteractive radio is not thereby licensed for user-controlled or on-demand playback. Conversely, a catalog with direct worldwide grants for the precise service could support either transport.
 
-## 4. Compatibility with lofi.fm's current domain and player
+## 4. Compatibility with the current COAST.FM player
 
 ### Shared Station: incremental compatibility
 
@@ -162,7 +162,7 @@ No primary source reviewed showed a hobby-priced, bring-your-own-catalog service
 
 ### Shared Station
 
-One playout authority knows the current track and can insert ICY metadata or expose a side API. Icecast documents current `artist` and `title` as source-client-set metadata and exposes listener counts plus cumulative connections and bytes.[10] This aligns with lofi.fm's current `Known`, `Partial`, or `Unavailable` attribution normalization.
+One playout authority knows the current track and can insert ICY metadata or expose a side API. Icecast documents current `artist` and `title` as source-client-set metadata and exposes listener counts plus cumulative connections and bytes.[10] This aligns with CoasTTY's current `Known`, `Partial`, or `Unavailable` attribution normalization.
 
 The weaknesses are timing and completeness: metadata can arrive late, be malformed, disappear across reconnects, or omit reporting identifiers such as ISRC and label. The playout database, not the public ICY string, should remain authoritative.
 
@@ -230,7 +230,7 @@ The model decision turns on these product and risk preferences:
 6. Will the source catalog offer only linear/noninteractive rights, or direct grants broad enough for independent playback?
 7. Is a predictable managed monthly station fee preferable to cheap commodity delivery with unknown direct-licensing and product-development cost?
 
-Neither model dominates every dimension. The shared Station minimizes product change and has mature managed operations, but concentrates availability and remains bound by linear-programming constraints. The independent Playlist offers deterministic personal playback and cheap static delivery, but can trigger broader rights, introduces a new lofi.fm concept/runtime, and lacks an identified turnkey worldwide licensed service.
+Neither model dominates every dimension. The shared Station minimizes product change and has mature managed operations, but concentrates availability and remains bound by linear-programming constraints. The independent Playlist offers deterministic personal playback and cheap static delivery, but can trigger broader rights, introduces a new CoasTTY concept/runtime, and lacks an identified turnkey worldwide licensed service.
 
 ## Sources
 

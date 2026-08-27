@@ -12,7 +12,7 @@ import { ThemeProvider } from "./ui/theme";
 
 const skipBootSequence = process.argv.includes("--skip-boot-sequence");
 
-function LofiFm() {
+function Coastty() {
   const [booted, setBooted] = useState(skipBootSequence);
   const [autoplay, setAutoplay] = useState(true);
 
@@ -34,7 +34,7 @@ const program = Effect.scoped(Effect.gen(function* () {
   yield* openTui.mount(
     <RegistryContext.Provider value={registry}>
       <ThemeProvider>
-        <LofiFm />
+        <Coastty />
       </ThemeProvider>
     </RegistryContext.Provider>,
   );

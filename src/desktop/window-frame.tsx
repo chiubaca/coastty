@@ -5,7 +5,7 @@ import { useAtomSet } from "@effect-atom/atom-react/Hooks";
 import type { AppManifest, AppScrollState } from "../apps/types";
 import { usePlaybackLifecycle } from "../radio/playback-lifecycle";
 import { type ManagedWindow, windowManagerAtom, WindowCommand } from "./window-manager";
-import { LofiText } from "../ui/lofi-text";
+import { CoasttyText } from "../ui/coastty-text";
 import { useTheme } from "../ui/theme";
 
 type Viewport = { width: number; height: number };
@@ -156,7 +156,7 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
             dispatchWindow(WindowCommand.Minimize({ appId: app.id }));
           }}
         >
-          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[_]</LofiText>
+          <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>[_]</CoasttyText>
         </box>
         <box width={1} />
         <box
@@ -171,7 +171,7 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
             );
           }}
         >
-          <LofiText fg={colors.accent} attributes={TextAttributes.BOLD}>[X]</LofiText>
+          <CoasttyText fg={colors.accent} attributes={TextAttributes.BOLD}>[X]</CoasttyText>
         </box>
         <box width={1} />
       </box>

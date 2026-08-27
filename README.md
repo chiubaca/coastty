@@ -1,4 +1,4 @@
-# lofi-fm
+# CoasTTY
 
 To install dependencies:
 
@@ -20,7 +20,7 @@ bun dev --skip-boot-sequence
 
 Audius reads work anonymously. Set the optional `AUDIUS_API_KEY` environment
 variable to use a read-only key for higher published limits. Playlist cursors
-are stored under `~/.lofi-fm/playlist-cursors`; set `LOFI_FM_STATE_DIR` to use a
+are stored under `~/.coastty/playlist-cursors`; set `COASTTY_STATE_DIR` to use a
 different device-local cursor directory.
 
 ## Icons
@@ -35,7 +35,7 @@ brew install --cask font-jetbrains-mono-nerd-font
 Use ASCII icons instead when the terminal does not have a Nerd Font selected:
 
 ```bash
-LOFI_FM_ICON_VARIANT=ascii bun dev
+COASTTY_ICON_VARIANT=ascii bun dev
 ```
 
 ## Effect architecture

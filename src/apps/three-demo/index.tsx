@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import type { AppComponentProps } from "../types";
 import { windowFocusedAtom } from "../../desktop/window-manager";
 import { useAtomValue } from "@effect-atom/atom-react/Hooks";
-import { LofiText } from "../../ui/lofi-text";
+import { CoasttyText } from "../../ui/coastty-text";
 import { useTheme } from "../../ui/theme";
 
 declare module "@opentui/react" {
@@ -390,7 +390,7 @@ export function ThreeDemo({ appId }: AppComponentProps) {
   return (
     <box flexGrow={1} minWidth={1} flexDirection="column" backgroundColor={colors.background}>
       <box height={1} paddingX={1} justifyContent="space-between" backgroundColor={colors.shadow}>
-        <LofiText fg={paused ? colors.highlight : colors.accent}>{paused ? "PAUSED" : "LIVE"}</LofiText>
+        <CoasttyText fg={paused ? colors.highlight : colors.accent}>{paused ? "PAUSED" : "LIVE"}</CoasttyText>
       </box>
       <three
         flexGrow={1}
@@ -407,9 +407,9 @@ export function ThreeDemo({ appId }: AppComponentProps) {
             backgroundColor={shape === option ? colors.accent : colors.border}
             onMouseDown={() => selectShape(option)}
           >
-            <LofiText fg={shape === option ? colors.background : colors.primary} attributes={shape === option ? TextAttributes.BOLD : undefined}>
+            <CoasttyText fg={shape === option ? colors.background : colors.primary} attributes={shape === option ? TextAttributes.BOLD : undefined}>
               [{index + 1}] {option}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
@@ -422,9 +422,9 @@ export function ThreeDemo({ appId }: AppComponentProps) {
             backgroundColor={renderType === option ? colors.highlight : colors.shadow}
             onMouseDown={() => selectRenderType(option)}
           >
-            <LofiText fg={renderType === option ? colors.background : colors.primary} attributes={renderType === option ? TextAttributes.BOLD : undefined}>
+            <CoasttyText fg={renderType === option ? colors.background : colors.primary} attributes={renderType === option ? TextAttributes.BOLD : undefined}>
               [{option === "SEGMENTS" ? "G" : option[0]}] {option}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
@@ -437,9 +437,9 @@ export function ThreeDemo({ appId }: AppComponentProps) {
             backgroundColor={renderType === option ? colors.highlight : colors.shadow}
             onMouseDown={() => selectRenderType(option)}
           >
-            <LofiText fg={renderType === option ? colors.background : colors.primary} attributes={renderType === option ? TextAttributes.BOLD : undefined}>
+            <CoasttyText fg={renderType === option ? colors.background : colors.primary} attributes={renderType === option ? TextAttributes.BOLD : undefined}>
               [{option[0]}] {option}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
@@ -452,9 +452,9 @@ export function ThreeDemo({ appId }: AppComponentProps) {
             backgroundColor={outlineWidth === option.label ? colors.accent : colors.border}
             onMouseDown={() => selectOutlineWidth(option.label)}
           >
-            <LofiText fg={outlineWidth === option.label ? colors.background : colors.primary} attributes={outlineWidth === option.label ? TextAttributes.BOLD : undefined}>
+            <CoasttyText fg={outlineWidth === option.label ? colors.background : colors.primary} attributes={outlineWidth === option.label ? TextAttributes.BOLD : undefined}>
               [{option.label === "THIN" ? "Q" : option.label === "NORMAL" ? "A" : "Z"}] {option.label}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
@@ -467,41 +467,41 @@ export function ThreeDemo({ appId }: AppComponentProps) {
             backgroundColor={palette === option.label ? option.value : colors.shadow}
             onMouseDown={() => setPalette(option.label)}
           >
-            <LofiText fg={palette === option.label ? colors.background : colors.primary} attributes={palette === option.label ? TextAttributes.BOLD : undefined}>
+            <CoasttyText fg={palette === option.label ? colors.background : colors.primary} attributes={palette === option.label ? TextAttributes.BOLD : undefined}>
               [{option.label === "CYAN" ? "C" : option.label === "PINK" ? "K" : option.label === "VIOLET" ? "V" : "Y"}] {option.label}
-            </LofiText>
+            </CoasttyText>
           </box>
         ))}
       </box>
       <box height={1} paddingX={1} flexDirection="row" justifyContent="space-between" backgroundColor={colors.background}>
         <box paddingX={1} backgroundColor={colors.accent} onMouseDown={() => void exportSettings()}>
-          <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[E] EXPORT SETTINGS</LofiText>
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>[E] EXPORT SETTINGS</CoasttyText>
         </box>
-        {exportStatus === "success" ? <LofiText fg={colors.glow}>EXPORTED: {SETTINGS_EXPORT_PATH}</LofiText> : null}
-        {exportStatus === "error" ? <LofiText fg={colors.highlight}>EXPORT FAILED</LofiText> : null}
+        {exportStatus === "success" ? <CoasttyText fg={colors.glow}>EXPORTED: {SETTINGS_EXPORT_PATH}</CoasttyText> : null}
+        {exportStatus === "error" ? <CoasttyText fg={colors.highlight}>EXPORT FAILED</CoasttyText> : null}
       </box>
       <box height={1} flexDirection="row" backgroundColor={colors.background}>
         <box width={4} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => moveInspector(-1)}>
-          <LofiText fg={colors.primary}>[UP]</LofiText>
+          <CoasttyText fg={colors.primary}>[UP]</CoasttyText>
         </box>
         <box width={13} paddingLeft={1} backgroundColor={colors.shadow}>
-          <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>{activeInspectorField}</LofiText>
+          <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>{activeInspectorField}</CoasttyText>
         </box>
         <box flexGrow={1} paddingLeft={1} backgroundColor={colors.background}>
-          <LofiText fg={colors.primary}>{inspectorValue(activeInspectorField)}</LofiText>
+          <CoasttyText fg={colors.primary}>{inspectorValue(activeInspectorField)}</CoasttyText>
         </box>
         <box width={4} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => adjustInspector(-1)}>
-          <LofiText fg={colors.primary}>[-]</LofiText>
+          <CoasttyText fg={colors.primary}>[-]</CoasttyText>
         </box>
         <box width={4} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => adjustInspector(1)}>
-          <LofiText fg={colors.primary}>[+]</LofiText>
+          <CoasttyText fg={colors.primary}>[+]</CoasttyText>
         </box>
         <box width={4} justifyContent="center" backgroundColor={colors.border} onMouseDown={() => moveInspector(1)}>
-          <LofiText fg={colors.primary}>[DN]</LofiText>
+          <CoasttyText fg={colors.primary}>[DN]</CoasttyText>
         </box>
       </box>
       <box height={1} paddingX={1} justifyContent="center" backgroundColor={colors.background}>
-        <LofiText fg={colors.muted}>UP/DOWN: FIELD // LEFT/RIGHT: VALUE // E: EXPORT // 1-4: SHAPE // M/L/G/O/P/S/I: TYPE</LofiText>
+        <CoasttyText fg={colors.muted}>UP/DOWN: FIELD // LEFT/RIGHT: VALUE // E: EXPORT // 1-4: SHAPE // M/L/G/O/P/S/I: TYPE</CoasttyText>
       </box>
     </box>
   );

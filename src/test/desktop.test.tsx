@@ -41,7 +41,7 @@ describe("desktop shell", () => {
         ),
       )));
       await flush();
-      await waitForFrame((frame) => frame.includes("🌴  WAVE.FM"));
+      await waitForFrame((frame) => frame.includes("🌴  COAST.FM"));
 
       let topbar = captureCharFrame().split("\n")[0] ?? "";
       expect(topbar).not.toContain("Settings");

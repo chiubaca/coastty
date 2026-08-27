@@ -8,7 +8,7 @@ Blocked by: 02-rank-ready-made-station-sources.md, 05-rank-self-curated-music-so
 
 ## Question
 
-Given the ranked ready-made Station candidates and self-curated source and service combinations, what should lofi.fm use to get more music? Through a live grilling session, produce the final ranked dual-path recommendation, name the preferred and fallback options, state when no option meets the destination constraints, and make each recommendation's cost, rights uncertainty, attribution, metadata, reliability, musical fit, operational burden, and compatibility caveats explicit.
+Given the ranked ready-made Station candidates and self-curated source and service combinations, what should CoasTTY use to get more music? Through a live grilling session, produce the final ranked dual-path recommendation, name the preferred and fallback options, state when no option meets the destination constraints, and make each recommendation's cost, rights uncertainty, attribution, metadata, reliability, musical fit, operational burden, and compatibility caveats explicit.
 
 ## Comments
 
@@ -27,7 +27,7 @@ The Audius recommendation has these explicit conditions and tradeoffs:
 - **Attribution and metadata:** Show artist, title, and Audius identity when the API supplies them, but missing attribution or rights metadata does not remove a playable track. Deleted and deactivated entries demonstrate that technical availability must still be refreshed rather than assumed.
 - **Reliability:** Audius offers no SLA, may revoke API access, and relies on hosted stream and mirror behavior. Before release, test URL lifetime, range and elapsed-position resume, track transitions, removals, API and mirror failure, and listener concurrency.
 - **Musical fit:** The two human-curated collections establish concrete upbeat and lofi intent more strongly than a broad catalog search. A Playable Playlist must contain at least 10 playable tracks and 45 minutes of playable runtime; falling below either floor makes that Playlist unavailable until it recovers.
-- **Operational burden:** lofi.fm owns continuous collection refresh, playability filtering, failure handling, available attribution display, and device-local cursor state. The Audius Source Collections are authoritative for playable membership and order rather than one-time imports.
+- **Operational burden:** CoasTTY owns continuous collection refresh, playability filtering, failure handling, available attribution display, and device-local cursor state. The Audius Source Collections are authoritative for playable membership and order rather than one-time imports.
 - **Compatibility:** Audius tracks do not fit the existing endless direct-stream Station contract. They require the distinct Playlist runtime already defined by this map: fixed-order looping, per-device pause and resume, forward skip, and a persisted local cursor without shuffle, seeking, previous-track navigation, accounts, or cloud sync. The cursor stores Audius track identity and elapsed position rather than only an index. A surviving playable track resumes and then follows the latest collection order; a stale cursor whose track was removed or became unplayable restarts at the first playable track.
 
 Adoption is gated only on successful shared playback-behavior tests. Each Playable Playlist is then gated independently on usable API access to its Source Collection and the minimum of 10 playable tracks and 45 playable minutes. These are implementation and release checks, not unresolved source-strategy decisions.

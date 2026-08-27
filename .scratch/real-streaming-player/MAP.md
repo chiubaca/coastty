@@ -1,11 +1,11 @@
-# Ship a Real Streaming lofi.fm Player
+# Ship a Real Streaming COAST.FM Player
 
 Label: wayfinder:map
 Status: closed
 
 ## Destination
 
-A working, cross-platform-designed lofi.fm player for the lawfully usable Nightwave Plaza stream that explicitly starts playback, honestly identifies the Station as vaporwave/future funk, shows its required current artist/title attribution, supports keyboard and mouse controls for play/pause and volume, and reports connection/error state. The UI shows Station identity without selection controls while the runtime remains extensible; playback is manually verified on macOS in Apple Terminal and one Kitty-capable terminal, with other supported platforms documented accurately as unverified.
+A working, cross-platform-designed COAST.FM player for the lawfully usable Nightwave Plaza stream that explicitly starts playback, honestly identifies the Station as vaporwave/future funk, shows its required current artist/title attribution, supports keyboard and mouse controls for play/pause and volume, and reports connection/error state. The UI shows Station identity without selection controls while the runtime remains extensible; playback is manually verified on macOS in Apple Terminal and one Kitty-capable terminal, with other supported platforms documented accurately as unverified.
 
 ## Notes
 
@@ -14,7 +14,7 @@ A working, cross-platform-designed lofi.fm player for the lawfully usable Nightw
 - This effort overrides wayfinding's planning default: carry implementation and verification through the map until the working player reaches the destination.
 - Playback starts only after an explicit listener action.
 - Keep the app free and ad-free; Nightwave Plaza's stream-use permission is conditional on both.
-- Preserve the existing retro-desktop visual language and `LofiText` convention.
+- Preserve the existing retro-desktop visual language and `CoasttyText` convention.
 - Design portably for OpenTUI's macOS, Linux, and Windows native audio targets; this environment can directly verify playback only on macOS.
 - Keep automated verification lightweight: run the existing tests and typecheck, and add focused deterministic checks only where they cheaply support an implementation slice.
 

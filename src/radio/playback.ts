@@ -125,7 +125,7 @@ export type StreamingAudioService = {
   readonly dispatchAndWait: (command: PlaybackCommand) => Effect.Effect<void>;
 };
 
-export class StreamingAudio extends Context.Tag("lofi-fm/StreamingAudio")<StreamingAudio, StreamingAudioService>() {}
+export class StreamingAudio extends Context.Tag("coastty/StreamingAudio")<StreamingAudio, StreamingAudioService>() {}
 
 const unavailable: Attribution = { _tag: "Unavailable" };
 

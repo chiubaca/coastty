@@ -1,13 +1,16 @@
-import { TextAttributes } from "@opentui/core";
+import { measureText, TextAttributes } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState } from "react";
-import { LofiText } from "./lofi-text";
+import { CoasttyText } from "./coastty-text";
 import { useTheme } from "./theme";
 
-export const BOOT_TITLE = "//////////  L O F I . F M  //////////";
+export const BOOT_TITLE = "//////////  C O A S T T Y  //////////";
+const BOOT_WORD = "C O A S T T Y";
+const BOOT_WORD_FONT = "tiny";
+const BOOT_WORD_SIZE = measureText({ text: BOOT_WORD, font: BOOT_WORD_FONT });
 
 const BIOS_LINES = [
-  "LOFI SYSTEMS ROM BIOS (C) 1995",
+  "COASTTY SYSTEMS ROM BIOS (C) 1995",
   "CPU: AUDIOWAVE 486DX2 @ 66MHz",
   "MEMORY TEST: 640K .............. OK",
   "AUDIO DEVICE: FM SYNTH ........ OK",
@@ -37,7 +40,7 @@ const BOOT_LOGO = [
   { row: `${"=".repeat(13)}***${"=".repeat(13)}`, shade: 5 },
   { row: "=".repeat(23), shade: 6 },
   { row: " ", shade: 6 },
-  { row: "L O F I   8 5", shade: 6 },
+  { row: "C O A S T T Y", shade: 6 },
 ] as const;
 
 const BOOT_LOGO_WIDTH = 29;
@@ -88,7 +91,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
   const frame = getBootFrame(elapsedMs);
   const titleGlyphCount = Math.min(10, Math.max(0, frame.titleCharacterCount - 1));
   const titleGlyphs = "/".repeat(titleGlyphCount);
-  const expandedTitle = `${titleGlyphs}  L O F I . F M  ${titleGlyphs}`;
+  const expandedTitle = `${titleGlyphs}  ${" ".repeat(BOOT_WORD_SIZE.width)}  ${titleGlyphs}`;
   const titleVisible = elapsedMs >= TITLE_START_MS;
   const entryAgeMs = Math.max(0, elapsedMs - BOOT_DURATION_MS);
   const entryBracketCount = Math.floor(entryAgeMs / ENTRY_BRACKET_INTERVAL_MS) % 4;
@@ -126,9 +129,9 @@ export function BootScreen({ onComplete }: BootScreenProps) {
       {showBootLogo && (
         <box position="absolute" top={1} right={width === BOOT_LOGO_WIDTH ? 0 : compact ? 1 : 3} width={BOOT_LOGO_WIDTH}>
           {BOOT_LOGO.map(({ row, shade }, index) => (
-            <LofiText key={index} fg={bootLogoColors[shade]} attributes={TextAttributes.BOLD}>
+            <CoasttyText key={index} fg={bootLogoColors[shade]} attributes={TextAttributes.BOLD}>
               {`${" ".repeat(Math.floor((BOOT_LOGO_WIDTH - row.length) / 2))}${row}`}
-            </LofiText>
+            </CoasttyText>
           ))}
         </box>
       )}
@@ -136,40 +139,38 @@ export function BootScreen({ onComplete }: BootScreenProps) {
       {elapsedMs < TITLE_START_MS && (
         <box position="absolute" top={logoStacksWithBios ? BOOT_LOGO.length + 3 : 3} left={compact ? 2 : 4}>
           {BIOS_LINES.slice(0, frame.biosLineCount).map((line, index) => (
-            <LofiText
+            <CoasttyText
               key={line}
               fg={index === frame.biosLineCount - 1 ? colors.highlight : colors.primary}
               attributes={index === 0 ? TextAttributes.BOLD : undefined}
             >
               {line}
-            </LofiText>
+            </CoasttyText>
           ))}
         </box>
       )}
 
       {titleVisible && (
         <box flexGrow={1} alignItems="center" justifyContent="center">
-          <box height={3} width={Math.max(expandedTitle.length, "[[[CLICK TO ENTER]]]".length)} alignItems="center" justifyContent="center">
-            <LofiText position="absolute" top={0} fg={colors.shadow} attributes={TextAttributes.DIM}>
+          <box height={4} width={Math.max(expandedTitle.length, "[[[CLICK TO ENTER]]]".length)} alignItems="center" justifyContent="center">
+            <CoasttyText position="absolute" top={0} fg={colors.shadow} attributes={TextAttributes.DIM}>
               {expandedTitle}
-            </LofiText>
-            <LofiText position="absolute" top={1} fg={glowColor} attributes={TextAttributes.BOLD}>
+            </CoasttyText>
+            <ascii-font position="absolute" top={1} text={BOOT_WORD} font={BOOT_WORD_FONT} color={glowColor} selectable={false} />
+            <CoasttyText position="absolute" top={3} fg={colors.shadow} attributes={TextAttributes.DIM}>
               {expandedTitle}
-            </LofiText>
-            <LofiText position="absolute" top={2} fg={colors.shadow} attributes={TextAttributes.DIM}>
-              {expandedTitle}
-            </LofiText>
+            </CoasttyText>
             {frame.complete && (
               <>
-                <LofiText position="absolute" top={4} fg={colors.shadow} attributes={TextAttributes.DIM}>
+                <CoasttyText position="absolute" top={5} fg={colors.shadow} attributes={TextAttributes.DIM}>
                   {entryPrompt}
-                </LofiText>
-                <LofiText position="absolute" top={5} fg={colors.accent} attributes={TextAttributes.BOLD}>
+                </CoasttyText>
+                <CoasttyText position="absolute" top={6} fg={colors.accent} attributes={TextAttributes.BOLD}>
                   {entryPrompt}
-                </LofiText>
-                <LofiText position="absolute" top={6} fg={colors.shadow} attributes={TextAttributes.DIM}>
+                </CoasttyText>
+                <CoasttyText position="absolute" top={7} fg={colors.shadow} attributes={TextAttributes.DIM}>
                   {entryPrompt}
-                </LofiText>
+                </CoasttyText>
               </>
             )}
           </box>
@@ -177,11 +178,11 @@ export function BootScreen({ onComplete }: BootScreenProps) {
       )}
 
       {!frame.complete && (
-        <LofiText position="absolute" left={compact ? 2 : 4} bottom={2} fg={colors.muted} attributes={TextAttributes.DIM}>
+        <CoasttyText position="absolute" left={compact ? 2 : 4} bottom={2} fg={colors.muted} attributes={TextAttributes.DIM}>
           {elapsedMs < TITLE_START_MS
-            ? `${spinner} BOOTING FROM LOFI DISK`
+            ? `${spinner} BOOTING FROM COASTTY DISK`
             : "SIGNAL LOCKED // CALIBRATING DISPLAY"}
-        </LofiText>
+        </CoasttyText>
       )}
 
       {frame.complete && (
@@ -194,9 +195,9 @@ export function BootScreen({ onComplete }: BootScreenProps) {
               setMusicOn(true);
             }}
           >
-            <LofiText fg={musicOn ? colors.background : colors.primary} attributes={musicOn ? TextAttributes.BOLD : undefined}>MUSIC ON</LofiText>
+            <CoasttyText fg={musicOn ? colors.background : colors.primary} attributes={musicOn ? TextAttributes.BOLD : undefined}>MUSIC ON</CoasttyText>
           </box>
-          <LofiText fg={colors.muted}> / </LofiText>
+          <CoasttyText fg={colors.muted}> / </CoasttyText>
           <box
             paddingX={1}
             backgroundColor={!musicOn ? colors.accent : colors.shadow}
@@ -205,7 +206,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
               setMusicOn(false);
             }}
           >
-            <LofiText fg={!musicOn ? colors.background : colors.primary} attributes={!musicOn ? TextAttributes.BOLD : undefined}>MUSIC OFF</LofiText>
+            <CoasttyText fg={!musicOn ? colors.background : colors.primary} attributes={!musicOn ? TextAttributes.BOLD : undefined}>MUSIC OFF</CoasttyText>
           </box>
         </box>
       )}

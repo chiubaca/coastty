@@ -8,7 +8,7 @@ import { aboutApp, apps, desktopApps } from "../apps/registry";
 import { PlaybackCommand } from "../radio/playback";
 import { playbackCommandAtom } from "../radio/playback-atoms";
 import { usePlaybackLifecycle } from "../radio/playback-lifecycle";
-import { LofiText } from "../ui/lofi-text";
+import { CoasttyText } from "../ui/coastty-text";
 import { themeOrder, themes, useTheme } from "../ui/theme";
 import { focusedAppIdAtom, windowManagerAtom, windowsAtom, WindowCommand } from "./window-manager";
 import { WindowFrame } from "./window-frame";
@@ -36,7 +36,7 @@ type DesktopProps = {
 };
 
 // Places the player near the bottom-left while keeping it below the topbar.
-export function initialLofiPlayerPosition(viewportHeight: number, playerHeight: number) {
+export function initialCoasttyPlayerPosition(viewportHeight: number, playerHeight: number) {
   return { left: 2, top: Math.max(1, viewportHeight - playerHeight - 2) };
 }
 
@@ -87,12 +87,12 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
   useEffect(() => {
     if (startedPlayer.current) return;
     startedPlayer.current = true;
-    const player = apps.find((app) => app.id === "lofi-player");
+    const player = apps.find((app) => app.id === "coastty-player");
     if (!player) return;
 
     dispatchWindow(WindowCommand.Open({
       app: player,
-      position: initialLofiPlayerPosition(height, player.initialSize.height),
+      position: initialCoasttyPlayerPosition(height, player.initialSize.height),
     }));
     if (autoplay) dispatchPlayback(PlaybackCommand.Play());
   }, [autoplay, dispatchPlayback, dispatchWindow, height]);
@@ -236,7 +236,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
           setSettingsOpen(false);
         }}
       >
-        <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>{topbarLabel}</LofiText>
+        <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>{topbarLabel}</CoasttyText>
 
         {/* Settings and About are visible only while Desktop owns the menu. */}
         {showDesktopMenu && <box flexDirection="row" marginLeft={2}>
@@ -253,9 +253,9 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               toggleSettings();
             }}
           >
-            <LofiText fg={settingsHighlighted ? colors.background : colors.highlight}>
+            <CoasttyText fg={settingsHighlighted ? colors.background : colors.highlight}>
               Settings
-            </LofiText>
+            </CoasttyText>
           </box>
           <box
             width={7}
@@ -270,17 +270,17 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               openAbout();
             }}
           >
-            <LofiText fg={aboutHighlighted ? colors.background : colors.highlight}>
+            <CoasttyText fg={aboutHighlighted ? colors.background : colors.highlight}>
               About
-            </LofiText>
+            </CoasttyText>
           </box>
         </box>}
 
         {/* Clock keeps the time visible and adds the full date when space allows. */}
         {showTime && <box height={1} marginLeft="auto">
-          <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>
+          <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>
             {showDate ? `${clock.date}  ${clock.time}` : clock.time}
-          </LofiText>
+          </CoasttyText>
         </box>}
       </box>
 
@@ -344,12 +344,12 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
                 onMouseOver={() => setSettingsItemIndex(index)}
                 onMouseDown={() => activateSettingsItem(index)}
               >
-                <LofiText
+                <CoasttyText
                   fg={selected ? colors.background : id === themeId ? colors.accent : colors.glowSoft}
                   attributes={selected || id === themeId ? TextAttributes.BOLD : undefined}
                 >
                   [{id === themeId ? "x" : " "}] {themes[id].label}
-                </LofiText>
+                </CoasttyText>
               </box>
             );
           })}
@@ -360,12 +360,12 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
             onMouseOver={() => setSettingsItemIndex(themeOrder.length)}
             onMouseDown={() => activateSettingsItem(themeOrder.length)}
           >
-            <LofiText
+            <CoasttyText
               fg={settingsItemIndex === themeOrder.length ? colors.background : colors.accent}
               attributes={TextAttributes.BOLD}
             >
               Restart
-            </LofiText>
+            </CoasttyText>
           </box>
         </box>
       )}
@@ -379,7 +379,7 @@ export function Desktop({ onRestart, autoplay }: DesktopProps) {
               setSettingsOpen(false);
               dispatchWindow(WindowCommand.Restore({ appId: app.id }));
             }}>
-              <LofiText fg={colors.background}>{app.title}</LofiText>
+              <CoasttyText fg={colors.background}>{app.title}</CoasttyText>
             </box>
           ))}
         </box>

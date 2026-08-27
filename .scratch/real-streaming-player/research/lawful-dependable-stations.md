@@ -32,7 +32,7 @@ This table intentionally has one row. Adding technically playable but unauthoriz
 
 ### Recommendation conditions
 
-- Confirm before release that lofi.fm is free to use and has no advertising. Otherwise Nightwave Plaza's grant does not apply. ([Legal notice](https://plaza.one/terms/legal.html))
+- Confirm before release that CoasTTY is free to use and has no advertising. Otherwise Nightwave Plaza's grant does not apply. ([Legal notice](https://plaza.one/terms/legal.html))
 - Render the provider's name and live artist/title whenever playback is active. ICY supplies both in one `StreamTitle`; the official status API is a fallback, not required for playback.
 - Use `https://radio.plaza.one/mp3`, not the plaintext URL in the official playlist.
 - Recheck the legal notice and endpoint before each release because neither permission nor availability is irrevocable.

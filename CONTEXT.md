@@ -1,6 +1,6 @@
-# lofi.fm
+# CoasTTY
 
-lofi.fm is a terminal radio experience for listening to a curated set of live lofi and chill-techno broadcasts.
+CoasTTY is a terminal radio experience for listening to a curated set of live lofi and chill-techno broadcasts.
 
 ## Language
 
@@ -36,9 +36,21 @@ _Avoid_: Suspended, buffered pause
 The listener-facing condition of playback: Stopped before the first explicit Play, Connecting while opening a Station, Buffering while preparing audible playback, Playing while audio is live, Paused after an intentional interruption, Reconnecting during automatic recovery, or Error after playback cannot continue without a listener action.
 _Avoid_: Stream state, engine state
 
+**Product Brand**:
+The official public name of the terminal-radio product: CoasTTY.
+_Avoid_: COAST.FM when referring to the whole product
+
 **App Name**:
 The stable label that identifies an app in WAVE OS, independent of any changing document, station, or window title.
 _Avoid_: Window title, document title
+
+**Music Player**:
+The WAVE OS app that presents CoasTTY's Stations and Playlists. Its App Name is COAST.FM.
+_Avoid_: CoasTTY when referring specifically to the player, WAVE OS
+
+**Technical Identifier**:
+The lowercase `coastty` name used for code, package metadata, and other machine-facing references to CoasTTY.
+_Avoid_: CoasTTY in code, coastty as the App Name
 
 **System App**:
 An app launched through WAVE OS itself rather than from a desktop icon; once open, it behaves like any other app window.

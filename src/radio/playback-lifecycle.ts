@@ -6,7 +6,7 @@ export function usePlaybackLifecycle() {
 
   return {
     pauseBeforeAppClose: (appId: string, close: () => void) => {
-      if (appId === "lofi-player") pauseThen(close);
+      if (appId === "coastty-player") pauseThen(close);
       else close();
     },
     pauseBeforeRestart: (restart: () => void) => {

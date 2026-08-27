@@ -2,17 +2,17 @@ import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot, flushSync } from "@opentui/react";
 import { createElement } from "react";
-import { blobMusicLevels, blobWaveStrength, LofiPlayerView, playbackCommandForKey, visualizerForKey } from "../apps/lofi-player";
+import { blobMusicLevels, blobWaveStrength, CoasttyPlayerView, playbackCommandForKey, visualizerForKey } from "../apps/coastty-player";
 import { initialPlaybackSnapshot, PlaybackCommand, type PlaybackCommand as PlaybackCommandType } from "../radio/playback";
 
-describe("lofi player", () => {
+describe("COAST.FM player", () => {
   test("uses 3D Blob by default and shows a separate visualizer control pane", async () => {
     const commands: PlaybackCommandType[] = [];
     const { renderer, flush, captureCharFrame } = await createTestRenderer({ width: 54, height: 14 });
     const root = createRoot(renderer);
 
     try {
-      flushSync(() => root.render(createElement(LofiPlayerView, {
+      flushSync(() => root.render(createElement(CoasttyPlayerView, {
         snapshot: initialPlaybackSnapshot,
         dispatch: (command) => commands.push(command),
       })));
@@ -67,7 +67,7 @@ describe("lofi player", () => {
     const root = createRoot(renderer);
 
     try {
-      flushSync(() => root.render(createElement(LofiPlayerView, {
+      flushSync(() => root.render(createElement(CoasttyPlayerView, {
         snapshot: initialPlaybackSnapshot,
         dispatch: (command) => commands.push(command),
         sidebarInitiallyOpen: true,
@@ -124,7 +124,7 @@ describe("lofi player", () => {
     const root = createRoot(renderer);
 
     try {
-      flushSync(() => root.render(createElement(LofiPlayerView, {
+      flushSync(() => root.render(createElement(CoasttyPlayerView, {
         snapshot,
         dispatch: (command) => commands.push(command),
         sidebarInitiallyOpen: true,

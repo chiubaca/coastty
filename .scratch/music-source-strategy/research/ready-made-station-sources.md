@@ -4,7 +4,7 @@ Research performed on 2026-08-19. This is a product-source assessment, not legal
 
 ## Executive answer
 
-**FluxFM ChillHop is the best new ready-made Station lead, but no newly researched source is ready to add without a policy or integration decision.** FluxFM describes the Station as hand-picked instrumentals between lofi and light G-funk and publishes a stable HTTPS MP3 URL specifically for external players. Its general terms nevertheless limit FluxMusic to private consumer use, and its ICY title was only the static value `ChillHop`, not current artist/title. It therefore needs provider clearance and either better metadata or an explicit change to lofi.fm's attribution contract. ([Station page](https://fluxfm.de/channels/chillhop), [external-player URLs](https://www.fluxfm.de/flux-musik-streams), [terms](https://fluxfm.de/nutzungsbedingungen))
+**FluxFM ChillHop is the best new ready-made Station lead, but no newly researched source is ready to add without a policy or integration decision.** FluxFM describes the Station as hand-picked instrumentals between lofi and light G-funk and publishes a stable HTTPS MP3 URL specifically for external players. Its general terms nevertheless limit FluxMusic to private consumer use, and its ICY title was only the static value `ChillHop`, not current artist/title. It therefore needs provider clearance and either better metadata or an explicit change to CoasTTY's attribution contract. ([Station page](https://fluxfm.de/channels/chillhop), [external-player URLs](https://www.fluxfm.de/flux-musik-streams), [terms](https://fluxfm.de/nutzungsbedingungen))
 
 **Loca FM Melodic Techno and Nightride FM Chillsynth are the strongest technical alternatives.** Both delivered no-key HTTPS MP3 continuously for a ten-second probe and exposed parseable artist/title ICY metadata. Loca is an exact melodic-techno expansion with an endpoint published in its official player, but its legal notice reserves audio rights and grants no standalone-app use. Nightride is an adjacent chillsynth choice with good metadata, but no provider terms or supported public MP3 integration commitment was found. ([Loca player](https://www.locafm.com/melodic-techno/player.html), [Loca legal notice](https://www.locafm.com/pagina/aviso-legal.html), [Nightride Stations](https://nightride.fm/stations))
 
@@ -24,7 +24,7 @@ Public reachability is evidence of technical availability, not a conclusion abou
 
 Candidates were ranked for a public, worldwide, free hobby project by:
 
-1. Honest musical fit with lofi.fm's focused and adjacent range.
+1. Honest musical fit with CoasTTY's focused and adjacent range.
 2. A provider-controlled or empirically stable HTTPS MP3/FLAC endpoint requiring no account or key.
 3. Current artist/title metadata and provider attribution quality.
 4. Fit with the current `StationIntegration`: direct HTTPS MP3/FLAC, validated content type, stable identity, and current artist/title attribution supplied through stream metadata.
@@ -89,11 +89,11 @@ Transfer counts include server buffering and ICY overhead and are not bitrate me
 
 ## Cost, reliability, and worldwide reach
 
-- Every successful endpoint accepted a connection without an account, token, API key, or payment. No candidate published a third-party app price or hobby traffic allowance. This means the observed marginal playback cost to lofi.fm is zero today, not that unlimited use is promised.
+- Every successful endpoint accepted a connection without an account, token, API key, or payment. No candidate published a third-party app price or hobby traffic allowance. This means the observed marginal playback cost to CoasTTY is zero today, not that unlimited use is promised.
 - No candidate publishes an SLA for this use. The tests did not include soak, reconnection, concurrency, load, or multi-day uptime sampling. Provider/CDN redirects and hostnames can change.
 - No multi-region test was performed. All positive results prove reachability only from this environment. "International," "with the world," or a worldwide artist submission form is not proof that a provider has worldwide listener rights or lacks geoblocking.
-- Direct playback makes each listener a connection to the provider, so lofi.fm would not pay relay bandwidth. At scale, the provider bears that traffic and may block, rate-limit, require a commercial agreement, or withdraw an endpoint.
-- Except for Nightwave Plaza, no reviewed source states attribution rules for a third-party app. lofi.fm should still show the honest provider/Station identity and only show artist/title that the source actually supplies.
+- Direct playback makes each listener a connection to the provider, so CoasTTY would not pay relay bandwidth. At scale, the provider bears that traffic and may block, rate-limit, require a commercial agreement, or withdraw an endpoint.
+- Except for Nightwave Plaza, no reviewed source states attribution rules for a third-party app. CoasTTY should still show the honest provider/Station identity and only show artist/title that the source actually supplies.
 
 ## Decision support
 

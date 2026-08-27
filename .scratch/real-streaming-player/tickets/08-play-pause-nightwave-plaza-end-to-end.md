@@ -8,7 +8,7 @@ Blocked by: none
 
 ## Question
 
-Implement the first working vertical slice from the production lofi.fm window to audible Nightwave Plaza playback: add the validated Station catalog and Nightwave Plaza direct-stream integration, own playback in the top-level scoped Effect runtime, bridge immutable state and commands through Effect Atom, and replace the placeholder player with explicit Play and Pause behavior. Cover Stopped, Connecting, Buffering, Playing, and Paused without autoplay; keep playback alive across minimize; reconcile the existing opening sound with the single-engine ownership decision; and add only focused deterministic checks that make this slice safe.
+Implement the first working vertical slice from the production COAST.FM window to audible Nightwave Plaza playback: add the validated Station catalog and Nightwave Plaza direct-stream integration, own playback in the top-level scoped Effect runtime, bridge immutable state and commands through Effect Atom, and replace the placeholder player with explicit Play and Pause behavior. Cover Stopped, Connecting, Buffering, Playing, and Paused without autoplay; keep playback alive across minimize; reconcile the existing opening sound with the single-engine ownership decision; and add only focused deterministic checks that make this slice safe.
 
 ## Comments
 

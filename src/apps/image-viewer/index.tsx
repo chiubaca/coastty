@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import type { AppComponentProps } from "../types";
 import { ASCII_ART_WALLPAPER, AsciiArtWallpaper, desktopWallpaperAtom } from "../../desktop/desktop-wallpaper";
 import { windowFocusedAtom } from "../../desktop/window-manager";
-import { LofiText } from "../../ui/lofi-text";
+import { CoasttyText } from "../../ui/coastty-text";
 import { useTheme } from "../../ui/theme";
 
 const GALLERY_DIRECTORY = fileURLToPath(new URL("../../assets/gallery/", import.meta.url));
@@ -91,26 +91,26 @@ export function ImageViewer({ appId, contentSize }: AppComponentProps) {
         {selected?.kind === "image" && <image flexGrow={1} minHeight={2} source={selected.path} fit="fit" onLoad={() => setLoading(false)} onError={() => setLoading(false)} />}
         {selected?.kind === "ascii" && <AsciiArtWallpaper width={contentSize.width} height={Math.max(0, contentSize.height - 1)} top={0} />}
         <box position="absolute" left={0} top={0} height={1} paddingX={1} backgroundColor="#07030f">
-          <LofiText fg={colors.glow} attributes={TextAttributes.BOLD}>GALLERY LIGHTBOX</LofiText>
+          <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>GALLERY LIGHTBOX</CoasttyText>
         </box>
         <box position="absolute" right={0} top={0} height={1} paddingX={1} backgroundColor="#07030f">
-          <LofiText fg={colors.accent}>{gallery.length === 0 ? "0 / 0" : `${selectedIndex + 1} / ${gallery.length}`}</LofiText>
+          <CoasttyText fg={colors.accent}>{gallery.length === 0 ? "0 / 0" : `${selectedIndex + 1} / ${gallery.length}`}</CoasttyText>
         </box>
         <box position="absolute" left={0} top="50%" width={4} height={3} justifyContent="center" alignItems="center" backgroundColor="#07030f" onMouseDown={() => selectImage(selectedIndex - 1)}>
-          <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>[&lt;]</LofiText>
+          <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>[&lt;]</CoasttyText>
         </box>
         <box position="absolute" right={0} top="50%" width={4} height={3} justifyContent="center" alignItems="center" backgroundColor="#07030f" onMouseDown={() => selectImage(selectedIndex + 1)}>
-          <LofiText fg={colors.highlight} attributes={TextAttributes.BOLD}>[&gt;]</LofiText>
+          <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>[&gt;]</CoasttyText>
         </box>
-        {loading && <LofiText position="absolute" left="50%" top="50%" fg={colors.glow}>LOADING IMAGE...</LofiText>}
-        {!loading && !selected && <LofiText position="absolute" left="50%" top="50%" fg={colors.muted}>NO IMAGES FOUND</LofiText>}
+        {loading && <CoasttyText position="absolute" left="50%" top="50%" fg={colors.glow}>LOADING IMAGE...</CoasttyText>}
+        {!loading && !selected && <CoasttyText position="absolute" left="50%" top="50%" fg={colors.muted}>NO IMAGES FOUND</CoasttyText>}
       </box>
       <box height={1} paddingX={1} justifyContent="space-between" backgroundColor={colors.shadow}>
-        <LofiText fg={colors.primary}>{selected?.name ?? "src/assets/gallery"}</LofiText>
+        <CoasttyText fg={colors.primary}>{selected?.name ?? "src/assets/gallery"}</CoasttyText>
         <box flexDirection="row" gap={1}>
-          <LofiText fg={colors.muted}>LEFT/RIGHT: BROWSE</LofiText>
+          <CoasttyText fg={colors.muted}>LEFT/RIGHT: BROWSE</CoasttyText>
           <box paddingX={1} backgroundColor={colors.accent} onMouseDown={setAsWallpaper}>
-            <LofiText fg={colors.background} attributes={TextAttributes.BOLD}>[W] SET WALLPAPER</LofiText>
+            <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>[W] SET WALLPAPER</CoasttyText>
           </box>
         </box>
       </box>

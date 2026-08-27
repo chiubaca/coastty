@@ -26,10 +26,10 @@ The listener-visible meaning of stop/pause, window close, desktop restart, retry
 
 ### React and desktop lifecycle
 
-- `LofiFm` switches between boot and desktop trees with local React state (`src/index.tsx:11-17`). The desktop's Restart button only sets `booted` to false (`src/desktop/desktop.tsx:109-123`); it does **not** restart the Effect program, renderer, registry, or top-level layers.
-- The player component is created only while its window exists and is not minimized (`src/desktop/desktop.tsx:156-161`). Minimizing therefore unmounts `LofiPlayer`; restoring creates it again. Closing also removes and unmounts it through `WindowCommand.Close` (`src/desktop/window-manager.ts:64-73`, `src/desktop/window-frame.tsx:102-107`). Component ownership would couple playback to window visibility.
+- `Coastty` switches between boot and desktop trees with local React state (`src/index.tsx:11-17`). The desktop's Restart button only sets `booted` to false (`src/desktop/desktop.tsx:109-123`); it does **not** restart the Effect program, renderer, registry, or top-level layers.
+- The player component is created only while its window exists and is not minimized (`src/desktop/desktop.tsx:156-161`). Minimizing therefore unmounts `CoasttyPlayer`; restoring creates it again. Closing also removes and unmounts it through `WindowCommand.Close` (`src/desktop/window-manager.ts:64-73`, `src/desktop/window-frame.tsx:102-107`). Component ownership would couple playback to window visibility.
 - The current opening sound is component-owned in `Desktop`: an empty-dependency `useEffect` creates an `Audio`, starts it after an asynchronous file load, and disposes it on desktop unmount (`src/desktop/desktop.tsx:33-55`). That is tolerable for a one-shot boot sound, but it is specifically the wrong lifecycle for persistent radio playback. Desktop restart unmounts this effect, and cancellation is an ad hoc boolean rather than structured scope cleanup.
-- `LofiPlayer` is currently a presentation stub with one window-manager command (`src/apps/lofi-player/index.tsx:8-25`). There is no current player state or runtime to preserve.
+- `CoasttyPlayer` is currently a presentation stub with one window-manager command (`src/apps/coastty-player/index.tsx:8-25`). There is no current player state or runtime to preserve.
 
 ### Existing Atom patterns and tests
 
@@ -287,7 +287,7 @@ Use Effect's scoped test execution and `TestClock` for service-owned actor/poll 
 
 ### React component ownership: reject
 
-Creating `Audio`/`AudioStream` in `LofiPlayer.useEffect` is superficially simple and resembles the opening sound. It is incorrect because minimizing and closing unmount the app (`src/desktop/desktop.tsx:156-161`), React development/reconciliation can repeat effect setup, asynchronous switch callbacks need manual cancellation, and process cleanup becomes indirect. It also makes playback policy an accidental consequence of view presence.
+Creating `Audio`/`AudioStream` in `CoasttyPlayer.useEffect` is superficially simple and resembles the opening sound. It is incorrect because minimizing and closing unmount the app (`src/desktop/desktop.tsx:156-161`), React development/reconciliation can repeat effect setup, asynchronous switch callbacks need manual cancellation, and process cleanup becomes indirect. It also makes playback policy an accidental consequence of view presence.
 
 Owning it in `Desktop` avoids minimize unmount but still ends on the current Restart UI and couples a domain resource to presentation. It would also force prop/context plumbing and duplicate the existing Effect scope.
 

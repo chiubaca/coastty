@@ -44,7 +44,7 @@ describe("BootScreen", () => {
       const frame = captureCharFrame();
       expect(frame).toContain(".-+%@@@@%+-.");
       expect(frame).toContain("=============***=============");
-      expect(frame).toContain("L O F I   8 5");
+      expect(frame).toContain("C O A S T T Y");
       expect(frame).not.toContain("░░");
     } finally {
       root.unmount();

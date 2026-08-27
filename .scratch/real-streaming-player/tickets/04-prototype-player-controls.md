@@ -8,13 +8,13 @@ Blocked by: none
 
 ## Question
 
-What compact retro-desktop player layout makes explicit play/pause, volume, Nightwave Plaza identity, required current artist/title attribution, connection/error feedback, and non-interactive `COMING SOON` expansion slots understandable within the existing lofi.fm window, with equivalent core keyboard and mouse operation and no controls that select an unavailable Station? Build a cheap interactive TUI prototype through the `prototype` and `opentui` skills, test it live with the human, and link the accepted artifact from the resolution.
+What compact retro-desktop player layout makes explicit play/pause, volume, Nightwave Plaza identity, required current artist/title attribution, connection/error feedback, and non-interactive `COMING SOON` expansion slots understandable within the existing COAST.FM window, with equivalent core keyboard and mouse operation and no controls that select an unavailable Station? Build a cheap interactive TUI prototype through the `prototype` and `opentui` skills, test it live with the human, and link the accepted artifact from the resolution.
 
 ## Comments
 
 ### Resolution - 2026-08-19
 
-Accepted **D - Directory Deck** after live comparison of four interactive 46x16 layouts. Primary asset: [Player controls prototype](../../../src/apps/lofi-player/player-controls.prototype.tsx).
+Accepted **D - Directory Deck** after live comparison of four interactive 46x16 layouts. Primary asset: [Player controls prototype](../../../src/apps/coastty-player/player-controls.prototype.tsx).
 
 Use this interaction and information hierarchy:
 
@@ -37,7 +37,7 @@ The human superseded the final clause of the scope update: expose four non-inter
 
 ### Final resolution after scope reconciliation - 2026-08-19
 
-Accepted the revised **D - Directory Deck**. Primary asset: [Player controls prototype](../../../src/apps/lofi-player/player-controls.prototype.tsx).
+Accepted the revised **D - Directory Deck**. Primary asset: [Player controls prototype](../../../src/apps/coastty-player/player-controls.prototype.tsx).
 
 - Keep a left-hand expansion directory with Nightwave Plaza highlighted as the sole available Station and four dimmed, non-interactive `COMING SOON` rows.
 - Treat that directory as Station identity and a visible expansion seam, not as a current Station-selection control. Keyboard numbers, Up/Down, and mouse clicks cannot select unavailable rows.

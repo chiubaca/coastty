@@ -8,7 +8,7 @@ Blocked by: none
 
 ## Question
 
-Which country should the recommendation treat as the home jurisdiction of the person or entity operating lofi.fm, and what assumptions should later research make if that operating location may change? Resolve this through a live grilling session so self-curated licensing and service eligibility are not evaluated against an unspecified legal context.
+Which country should the recommendation treat as the home jurisdiction of the person or entity operating CoasTTY, and what assumptions should later research make if that operating location may change? Resolve this through a live grilling session so self-curated licensing and service eligibility are not evaluated against an unspecified legal context.
 
 ## Comments
 

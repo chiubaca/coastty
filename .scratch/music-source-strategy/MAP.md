@@ -1,16 +1,16 @@
-# Recommend More Music Sources for lofi.fm
+# Recommend More Music Sources for CoasTTY
 
 Label: wayfinder:map
 Status: closed
 
 ## Destination
 
-An evidence-backed, ranked source recommendation identifies practical hobby-scale paths for expanding lofi.fm through both ready-made Stations and self-curated music. It recommends at least one path for each or establishes why no path meets the constraints, compares shared live and per-listener playback where relevant, and makes cost, rights uncertainty, metadata, reliability, musical fit, and compatibility with the existing player visible.
+An evidence-backed, ranked source recommendation identifies practical hobby-scale paths for expanding CoasTTY through both ready-made Stations and self-curated music. It recommends at least one path for each or establishes why no path meets the constraints, compares shared live and per-listener playback where relevant, and makes cost, rights uncertainty, metadata, reliability, musical fit, and compatibility with the existing player visible.
 
 ## Notes
 
 - Domain: a public, worldwide terminal radio experience focused on lofi, vaporwave, ambient, chillhop, chill-techno, and compatible low-attention adjacent music.
-- Consult `CONTEXT.md` and the closed [Ship a Real Streaming lofi.fm Player](../real-streaming-player/MAP.md) map before working a ticket.
+- Consult `CONTEXT.md` and the closed [Ship a Real Streaming COAST.FM Player](../real-streaming-player/MAP.md) map before working a ticket.
 - Use the `research` skill for AFK investigations and the `grilling` and `domain-modeling` skills for HITL decisions.
 - This effort follows wayfinding's planning default: produce a source recommendation, not implementation.
 - Prefer free or hobby-scale sources and low-maintenance managed services; document material paid upgrades and scaling costs.

@@ -1,6 +1,6 @@
 import { TextAttributes } from "@opentui/core";
 import type { AppManifest } from "../apps/types";
-import { LofiText } from "../ui/lofi-text";
+import { CoasttyText } from "../ui/coastty-text";
 import type { ThemeColors } from "../ui/theme";
 
 export const DESKTOP_ICON_WIDTH = 14;
@@ -71,12 +71,12 @@ export function DesktopIcon({
       }}
     >
       <box width={3} height={2} position="relative" >
-        <LofiText position="absolute" left={0.1} top={0.1} fg={colors.background} attributes={TextAttributes.DIM}>{app.icon}</LofiText>
-        <LofiText position="absolute" left={0} fg={baseColor} attributes={TextAttributes.BOLD}>{app.icon}</LofiText>
+        <CoasttyText position="absolute" left={0.1} top={0.1} fg={colors.background} attributes={TextAttributes.DIM}>{app.icon}</CoasttyText>
+        <CoasttyText position="absolute" left={0} fg={baseColor} attributes={TextAttributes.BOLD}>{app.icon}</CoasttyText>
       </box>
       <box width={DESKTOP_ICON_WIDTH} height={1} position="relative">
         <box position="absolute" left={labelLeft} width={labelWidth} height={1} justifyContent="center" backgroundColor={labelBackground}>
-          <LofiText fg={labelForeground} attributes={selected || hovered ? TextAttributes.BOLD : undefined}>{app.title}</LofiText>
+          <CoasttyText fg={labelForeground} attributes={selected || hovered ? TextAttributes.BOLD : undefined}>{app.title}</CoasttyText>
         </box>
       </box>
     </box>

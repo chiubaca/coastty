@@ -17,7 +17,7 @@ type OpenTuiService = {
   readonly closed: Effect.Effect<void>;
 };
 
-export class OpenTui extends Context.Tag("lofi-fm/OpenTui")<OpenTui, OpenTuiService>() {}
+export class OpenTui extends Context.Tag("coastty/OpenTui")<OpenTui, OpenTuiService>() {}
 
 export const OpenTuiLive = Layer.scoped(
   OpenTui,

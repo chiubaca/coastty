@@ -26,7 +26,7 @@ The two inherited product models are evaluated separately:
 | Model | Status | Best lead | Why it is not ship-ready |
 | --- | --- | --- | --- |
 | Station | **Conditional recommendation; no turnkey worldwide recommendation** | Direct artist/label catalog + Radio.co Standard; audited CC BY/CC0 + Radio.co is second | No catalog has been cleared. Radio.co is infrastructure only. Worldwide grants may not displace mandatory local payments or rights outside the licensor's control. |
-| Playlist | **Conditional investigation lead; no ship-ready worldwide recommendation** | Audius API + OML; direct artist grants + R2 is the controllable fallback | Audius track-level license state, legal scope, stream behavior, geography, and continuity need confirmation. The current lofi.fm runtime does not implement Playlist semantics. |
+| Playlist | **Conditional investigation lead; no ship-ready worldwide recommendation** | Audius API + OML; direct artist grants + R2 is the controllable fallback | Audius track-level license state, legal scope, stream behavior, geography, and continuity need confirmation. The current COAST.FM runtime does not implement Playlist semantics. |
 
 ## How the combinations were ranked
 
@@ -179,7 +179,7 @@ At hobby scale, a 10 GB compressed catalog can remain in R2's free tier. Deliver
 Run an **Audius feasibility and rights confirmation** before acquiring or self-hosting files:
 
 1. Curate a 20-track exact-fit fixed-order sample and record each track's OML or Alternative License, uploader, copyright notice, master/composition metadata, territory, and availability state.
-2. Ask Audius in writing whether lofi.fm's free, ad-free fixed-order player with pause/resume and uncapped forward skip is a `Music Player`, whether OML sublicensing covers the terminal client and its dependencies, and whether any platform or local royalties/reporting remain.
+2. Ask Audius in writing whether COAST.FM's free, ad-free fixed-order player with pause/resume and uncapped forward skip is a `Music Player`, whether OML sublicensing covers the terminal client and its dependencies, and whether any platform or local royalties/reporting remain.
 3. Test HTTPS codec, 320 kbps claim, range/resume, no-seek playback, stream expiry, mirror fallback, rate accounting, geoblocking, deletion, and API-key architecture.
 4. If those checks fail, seek direct artist grants and use R2. Do not substitute a Bandcamp purchase or ordinary royalty-free sync licence.
 
@@ -215,7 +215,7 @@ Prices were observed on 2026-08-19 and are not quotes. Taxes, exchange rates, ri
 
 At 128 kbps, one listener-hour is approximately 57.6 MB decimal. Rights costs and listening-hour plans therefore become more important than file storage quickly; R2's no-egress pricing is unusually favorable for Playlist delivery, while Station hosts price bundled listening capacity.
 
-## Compatibility with lofi.fm
+## Compatibility with CoasTTY
 
 ### Station
 
@@ -256,7 +256,7 @@ Not verified:
 
 - That any particular Audius, Jamendo, FMA, ccMixter, Openverse, Bandcamp, or artist-direct track has a complete enforceable worldwide chain of title for either model.
 - That Audius OML has no Alternative License on a selected track, or that its uploader warranty eliminates territory-specific statutory or collective obligations.
-- That any managed host's stream endpoint and metadata satisfy lofi.fm without a trial.
+- That any managed host's stream endpoint and metadata satisfy CoasTTY without a trial.
 - Multi-region endpoint availability, soak reliability, takedown frequency, actual genre depth, or a service-level agreement for the API candidates.
 - A worldwide composition/recording collective route or a hobby-priced turnkey Playlist-rights service.
 
@@ -278,7 +278,7 @@ Source-access limitations: PRS for Music's current deep links returned a generic
 7. Obtain sample direct artist/label grants and confirm whether artists will provide worldwide Station rights at hobby cost, including Radio.co/Airtime/Live365/AzuraCast sublicensing and server copies.
 8. Ask Radio.co for a current trial confirmation of a stable direct HTTPS MP3 URL, ICY metadata, fixed-order AutoDJ behavior, TTSL fields, listener-country reports, uptime/support expectations, and whether Standard is required for every needed report.
 9. Ask Audius whether a server-side communal playout that streams selected API tracks into a Radio.co/Airtime source is a permitted Music Player use, whether OML sublicensing reaches the host/listeners, and how session-only caching applies to buffering and transcoding.
-10. If conventional repertoire remains a candidate, obtain Live365's UK add-on price and written statement for an operator outside US/Canada/Mexico, direct stream use in lofi.fm, uncovered listeners, metadata rules, ads, and geofencing. Do not expose uncovered territories.
+10. If conventional repertoire remains a candidate, obtain Live365's UK add-on price and written statement for an operator outside US/Canada/Mexico, direct stream use in CoasTTY, uncovered listeners, metadata rules, ads, and geofencing. Do not expose uncovered territories.
 11. Verify schedules comply with every applicable linear-programming rule, including source-copy, repeat, album/artist, advance-listing, metadata, and minimum-program-length conditions.
 
 ### Playlist-specific

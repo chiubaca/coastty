@@ -14,42 +14,42 @@ import {
   windowManagerAtom,
   WindowCommand,
 } from "../desktop/window-manager";
-import { initialLofiPlayerPosition } from "../desktop/desktop";
+import { initialCoasttyPlayerPosition } from "../desktop/desktop";
 
-const lofiApp: AppManifest = {
-  id: "lofi-player",
-  title: "lofi.fm",
+const coasttyPlayerApp: AppManifest = {
+  id: "coastty-player",
+  title: "COAST.FM",
   icon: "|====|",
   initialPosition: { left: 24, top: 5 },
   initialSize: { width: 46, height: 16 },
   Component: () => null,
 };
 
-function windowFrom(state: typeof initialWindowManagerState, appId = lofiApp.id) {
+function windowFrom(state: typeof initialWindowManagerState, appId = coasttyPlayerApp.id) {
   return HashMap.get(state.windows, appId).pipe(Option.getOrThrow);
 }
 
 describe("window manager", () => {
   test("places the booted player at the bottom-left with padding", () => {
-    expect(initialLofiPlayerPosition(40, 24)).toEqual({ left: 2, top: 14 });
-    expect(initialLofiPlayerPosition(24, 24)).toEqual({ left: 2, top: 1 });
+    expect(initialCoasttyPlayerPosition(40, 24)).toEqual({ left: 2, top: 14 });
+    expect(initialCoasttyPlayerPosition(24, 24)).toEqual({ left: 2, top: 1 });
   });
 
   test("opens an app at its manifest defaults", () => {
-    const state = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
+    const state = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
 
     expect(windowFrom(state)).toMatchObject({
       left: 24,
       top: 5,
-      title: "lofi.fm",
+      title: "COAST.FM",
       minimized: false,
     });
-    expect(state.focusedAppId).toEqual(Option.some(lofiApp.id));
+    expect(state.focusedAppId).toEqual(Option.some(coasttyPlayerApp.id));
   });
 
   test("uses an explicit position when opening an app", () => {
     const state = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({
-      app: lofiApp,
+      app: coasttyPlayerApp,
       position: { left: 2, top: 14 },
     }));
 
@@ -57,42 +57,42 @@ describe("window manager", () => {
   });
 
   test("minimize and restore preserve geometry while raising the window", () => {
-    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
-    const moved = reduceWindowManager(opened, WindowCommand.Move({ appId: lofiApp.id, left: 10, top: 8 }));
+    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
+    const moved = reduceWindowManager(opened, WindowCommand.Move({ appId: coasttyPlayerApp.id, left: 10, top: 8 }));
     const initialZIndex = windowFrom(moved).zIndex;
-    const minimized = reduceWindowManager(moved, WindowCommand.Minimize({ appId: lofiApp.id }));
-    const restored = reduceWindowManager(minimized, WindowCommand.Restore({ appId: lofiApp.id }));
+    const minimized = reduceWindowManager(moved, WindowCommand.Minimize({ appId: coasttyPlayerApp.id }));
+    const restored = reduceWindowManager(minimized, WindowCommand.Restore({ appId: coasttyPlayerApp.id }));
 
     expect(windowFrom(restored)).toMatchObject({ left: 10, top: 8, minimized: false });
     expect(windowFrom(restored).zIndex).toBeGreaterThan(initialZIndex);
-    expect(restored.focusedAppId).toEqual(Option.some(lofiApp.id));
+    expect(restored.focusedAppId).toEqual(Option.some(coasttyPlayerApp.id));
   });
 
   test("close removes the window so reopening resets it to manifest defaults", () => {
     const commands = [
-      WindowCommand.Open({ app: lofiApp }),
-      WindowCommand.Move({ appId: lofiApp.id, left: 1, top: 1 }),
-      WindowCommand.SetTitle({ appId: lofiApp.id, title: "other station" }),
-      WindowCommand.Close({ appId: lofiApp.id }),
-      WindowCommand.Open({ app: lofiApp }),
+      WindowCommand.Open({ app: coasttyPlayerApp }),
+      WindowCommand.Move({ appId: coasttyPlayerApp.id, left: 1, top: 1 }),
+      WindowCommand.SetTitle({ appId: coasttyPlayerApp.id, title: "other station" }),
+      WindowCommand.Close({ appId: coasttyPlayerApp.id }),
+      WindowCommand.Open({ app: coasttyPlayerApp }),
     ];
     const state = commands.reduce(reduceWindowManager, initialWindowManagerState);
 
-    expect(windowFrom(state)).toMatchObject({ left: 24, top: 5, title: "lofi.fm" });
+    expect(windowFrom(state)).toMatchObject({ left: 24, top: 5, title: "COAST.FM" });
   });
 
   test("invalid commands and focus on a minimized window are no-ops", () => {
     const missing = reduceWindowManager(initialWindowManagerState, WindowCommand.Focus({ appId: "missing" }));
     expect(missing).toBe(initialWindowManagerState);
 
-    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
-    const minimized = reduceWindowManager(opened, WindowCommand.Minimize({ appId: lofiApp.id }));
-    const focused = reduceWindowManager(minimized, WindowCommand.Focus({ appId: lofiApp.id }));
+    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
+    const minimized = reduceWindowManager(opened, WindowCommand.Minimize({ appId: coasttyPlayerApp.id }));
+    const focused = reduceWindowManager(minimized, WindowCommand.Focus({ appId: coasttyPlayerApp.id }));
     expect(focused).toBe(minimized);
   });
 
   test("focusing Desktop preserves open windows", () => {
-    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
+    const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
     const desktopFocused = reduceWindowManager(opened, WindowCommand.FocusDesktop());
 
     expect(desktopFocused.focusedAppId).toEqual(Option.none());
@@ -105,10 +105,10 @@ describe("window manager", () => {
     const second = Registry.make();
 
     try {
-      first.set(windowManagerAtom, WindowCommand.Open({ app: lofiApp }));
+      first.set(windowManagerAtom, WindowCommand.Open({ app: coasttyPlayerApp }));
 
-      expect(HashMap.has(first.get(windowManagerAtom).windows, lofiApp.id)).toBe(true);
-      expect(HashMap.has(second.get(windowManagerAtom).windows, lofiApp.id)).toBe(false);
+      expect(HashMap.has(first.get(windowManagerAtom).windows, coasttyPlayerApp.id)).toBe(true);
+      expect(HashMap.has(second.get(windowManagerAtom).windows, coasttyPlayerApp.id)).toBe(false);
     } finally {
       first.dispose();
       second.dispose();
@@ -119,14 +119,14 @@ describe("window manager", () => {
     const registry = Registry.make();
     const focusedValues: boolean[] = [];
     const unsubscribe = registry.subscribe(
-      windowFocusedAtom(lofiApp.id),
+      windowFocusedAtom(coasttyPlayerApp.id),
       (focused) => focusedValues.push(focused),
       { immediate: true },
     );
 
     try {
-      registry.set(windowManagerAtom, WindowCommand.Open({ app: lofiApp }));
-      registry.set(windowManagerAtom, WindowCommand.Minimize({ appId: lofiApp.id }));
+      registry.set(windowManagerAtom, WindowCommand.Open({ app: coasttyPlayerApp }));
+      registry.set(windowManagerAtom, WindowCommand.Minimize({ appId: coasttyPlayerApp.id }));
 
       expect(focusedValues).toEqual([false, true, false]);
     } finally {
@@ -138,17 +138,17 @@ describe("window manager", () => {
   test("continues a title-bar drag when its first movement enters window content", async () => {
     const registry = Registry.make();
     const { renderer, mockMouse, flush } = await createTestRenderer({ width: 80, height: 24 });
-    const window = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: lofiApp }));
+    const window = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
     const root = createRoot(renderer);
 
     try {
-      registry.set(windowManagerAtom, WindowCommand.Open({ app: lofiApp }));
+      registry.set(windowManagerAtom, WindowCommand.Open({ app: coasttyPlayerApp }));
       flushSync(() => {
         root.render(
           createElement(
             RegistryContext.Provider,
             { value: registry },
-            createElement(WindowFrame, { app: lofiApp, window: windowFrom(window), viewport: { width: 80, height: 24 } }),
+            createElement(WindowFrame, { app: coasttyPlayerApp, window: windowFrom(window), viewport: { width: 80, height: 24 } }),
           ),
         );
       });

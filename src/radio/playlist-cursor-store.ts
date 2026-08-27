@@ -73,5 +73,5 @@ export function makeMemoryPlaylistCursorStore(
 }
 
 export const playlistCursorStoreLive = makeFilePlaylistCursorStore(
-  Bun.env.LOFI_FM_STATE_DIR ?? join(homedir(), ".lofi-fm", "playlist-cursors"),
+  Bun.env.COASTTY_STATE_DIR ?? join(homedir(), ".coastty", "playlist-cursors"),
 );
