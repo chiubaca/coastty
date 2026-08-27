@@ -9,6 +9,11 @@ import { CoasttyText } from "../ui/coastty-text";
 import { useTheme } from "../ui/theme";
 
 type Viewport = { width: number; height: number };
+type HorizontalEdge = "left" | "right";
+type VerticalEdge = "top" | "bottom";
+
+const MIN_WINDOW_WIDTH = 12;
+const MIN_WINDOW_HEIGHT = 6;
 
 type WindowFrameProps = {
   readonly app: AppManifest;
@@ -20,6 +25,16 @@ type WindowFrameProps = {
 export function WindowFrame({ app, window, viewport, onInteract }: WindowFrameProps) {
   const { theme: { colors } } = useTheme();
   const dragOffset = useRef<{ left: number; top: number } | null>(null);
+  const resizeState = useRef<{
+    readonly horizontal: HorizontalEdge;
+    readonly vertical: VerticalEdge;
+    readonly x: number;
+    readonly y: number;
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    readonly height: number;
+  } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isScrollbarHovered, setIsScrollbarHovered] = useState(false);
   const [isScrollbarDragging, setIsScrollbarDragging] = useState(false);
@@ -27,17 +42,17 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
   const renderer = useRenderer();
   const dispatchWindow = useAtomSet(windowManagerAtom);
   const playbackLifecycle = usePlaybackLifecycle();
-  const maxLeft = Math.max(0, viewport.width - app.initialSize.width);
+  const maxLeft = Math.max(0, viewport.width - window.width);
   const maxTop = Math.max(1, viewport.height - 2);
   const left = Math.min(window.left, maxLeft);
   const top = Math.min(window.top, maxTop);
   const contentPadding = app.contentPadding ?? 1;
   const hasOverflow = scrollState !== null && scrollState.size > scrollState.viewportSize;
   const contentSize = {
-    width: Math.max(0, app.initialSize.width - 2 - contentPadding * 2 - (hasOverflow ? 3 : 0)),
-    height: Math.max(0, app.initialSize.height - 2 - contentPadding * 2),
+    width: Math.max(0, window.width - 2 - contentPadding * 2 - (hasOverflow ? 3 : 0)),
+    height: Math.max(0, window.height - 2 - contentPadding * 2),
   };
-  const trackHeight = app.initialSize.height - 2 - contentPadding * 2;
+  const trackHeight = window.height - 2 - contentPadding * 2;
   const thumbHeight = hasOverflow
     ? Math.max(1, Math.min(trackHeight, Math.round((scrollState.viewportSize / scrollState.size) * trackHeight)))
     : 0;
@@ -56,13 +71,47 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
     );
   }
 
+  function startResize(horizontal: HorizontalEdge, vertical: VerticalEdge, x: number, y: number) {
+    dispatchWindow(WindowCommand.Focus({ appId: app.id }));
+    resizeState.current = { horizontal, vertical, x, y, left, top, width: window.width, height: window.height };
+    setIsDragging(true);
+  }
+
+  function resizeTo(x: number, y: number) {
+    const resize = resizeState.current;
+    if (!resize) return;
+
+    const right = resize.left + resize.width;
+    const bottom = resize.top + resize.height;
+    const nextLeft = resize.horizontal === "left"
+      ? Math.min(right - MIN_WINDOW_WIDTH, Math.max(0, resize.left + x - resize.x))
+      : resize.left;
+    const nextTop = resize.vertical === "top"
+      ? Math.min(bottom - MIN_WINDOW_HEIGHT, Math.max(1, resize.top + y - resize.y))
+      : resize.top;
+    const nextRight = resize.horizontal === "right"
+      ? Math.max(nextLeft + MIN_WINDOW_WIDTH, Math.min(viewport.width, right + x - resize.x))
+      : right;
+    const nextBottom = resize.vertical === "bottom"
+      ? Math.max(nextTop + MIN_WINDOW_HEIGHT, Math.min(viewport.height, bottom + y - resize.y))
+      : bottom;
+
+    dispatchWindow(WindowCommand.Resize({
+      appId: app.id,
+      left: nextLeft,
+      top: nextTop,
+      width: nextRight - nextLeft,
+      height: nextBottom - nextTop,
+    }));
+  }
+
   return (
     <box
       position="absolute"
       left={left}
       top={top}
-      width={app.initialSize.width}
-      height={app.initialSize.height}
+      width={window.width}
+      height={window.height}
       zIndex={window.zIndex}
       backgroundColor={colors.background}
       flexDirection="column"
@@ -72,12 +121,15 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
         dispatchWindow(WindowCommand.Focus({ appId: app.id }));
       }}
       onMouseDrag={(event) => {
-        if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
+        if (resizeState.current) resizeTo(event.x, event.y);
+        else if (dragOffset.current) moveTo(event.x - dragOffset.current.left, event.y - dragOffset.current.top);
       }}
       onMouseDragEnd={() => {
         dragOffset.current = null;
+        resizeState.current = null;
         setIsDragging(false);
         setIsScrollbarDragging(false);
+        renderer.setMousePointer("default");
       }}
     >
       <box
@@ -135,7 +187,7 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
         position="absolute"
         left={0}
         top={0}
-        width={app.initialSize.width}
+        width={window.width}
         height={1}
         flexDirection="row"
         onMouseOver={() => renderer.setMousePointer("move")}
@@ -175,6 +227,32 @@ export function WindowFrame({ app, window, viewport, onInteract }: WindowFramePr
         </box>
         <box width={1} />
       </box>
+      {/* Extend outward to capture the first drag event before it leaves the frame. */}
+      {([
+        { horizontal: "left", vertical: "top" },
+        { horizontal: "right", vertical: "top" },
+        { horizontal: "left", vertical: "bottom" },
+        { horizontal: "right", vertical: "bottom" },
+      ] as const).map(({ horizontal, vertical }) => (
+        <box
+          key={`${horizontal}-${vertical}`}
+          position="absolute"
+          left={horizontal === "left" ? -2 : window.width - 1}
+          top={vertical === "top" ? -2 : window.height - 1}
+          width={3}
+          height={3}
+          zIndex={1}
+          onMouseOver={() => renderer.setMousePointer("move")}
+          onMouseOut={() => {
+            if (!resizeState.current) renderer.setMousePointer("default");
+          }}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            onInteract?.();
+            startResize(horizontal, vertical, event.x, event.y);
+          }}
+        />
+      ))}
     </box>
   );
 }

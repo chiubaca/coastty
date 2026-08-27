@@ -22,6 +22,8 @@ describe("image viewer", () => {
       title: app.title,
       left: app.initialPosition.left,
       top: app.initialPosition.top,
+      width: app.initialSize.width,
+      height: app.initialSize.height,
       zIndex: 1,
       minimized: false,
     });

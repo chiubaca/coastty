@@ -41,6 +41,8 @@ describe("window manager", () => {
     expect(windowFrom(state)).toMatchObject({
       left: 24,
       top: 5,
+      width: 46,
+      height: 16,
       title: "COAST.FM",
       minimized: false,
     });
@@ -59,11 +61,18 @@ describe("window manager", () => {
   test("minimize and restore preserve geometry while raising the window", () => {
     const opened = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
     const moved = reduceWindowManager(opened, WindowCommand.Move({ appId: coasttyPlayerApp.id, left: 10, top: 8 }));
-    const initialZIndex = windowFrom(moved).zIndex;
-    const minimized = reduceWindowManager(moved, WindowCommand.Minimize({ appId: coasttyPlayerApp.id }));
+    const resized = reduceWindowManager(moved, WindowCommand.Resize({
+      appId: coasttyPlayerApp.id,
+      left: 10,
+      top: 8,
+      width: 52,
+      height: 18,
+    }));
+    const initialZIndex = windowFrom(resized).zIndex;
+    const minimized = reduceWindowManager(resized, WindowCommand.Minimize({ appId: coasttyPlayerApp.id }));
     const restored = reduceWindowManager(minimized, WindowCommand.Restore({ appId: coasttyPlayerApp.id }));
 
-    expect(windowFrom(restored)).toMatchObject({ left: 10, top: 8, minimized: false });
+    expect(windowFrom(restored)).toMatchObject({ left: 10, top: 8, width: 52, height: 18, minimized: false });
     expect(windowFrom(restored).zIndex).toBeGreaterThan(initialZIndex);
     expect(restored.focusedAppId).toEqual(Option.some(coasttyPlayerApp.id));
   });
@@ -160,6 +169,43 @@ describe("window manager", () => {
       await mockMouse.release(26, 8);
 
       expect(windowFrom(registry.get(windowManagerAtom))).toMatchObject({ left: 24, top: 8 });
+    } finally {
+      root.unmount();
+      renderer.destroy();
+      registry.dispose();
+    }
+  });
+
+  test("resizes from the bottom-right corner", async () => {
+    const registry = Registry.make();
+    const { renderer, mockMouse, flush } = await createTestRenderer({ width: 80, height: 24 });
+    const window = reduceWindowManager(initialWindowManagerState, WindowCommand.Open({ app: coasttyPlayerApp }));
+    const root = createRoot(renderer);
+
+    try {
+      registry.set(windowManagerAtom, WindowCommand.Open({ app: coasttyPlayerApp }));
+      flushSync(() => {
+        root.render(
+          createElement(
+            RegistryContext.Provider,
+            { value: registry },
+            createElement(WindowFrame, { app: coasttyPlayerApp, window: windowFrom(window), viewport: { width: 80, height: 24 } }),
+          ),
+        );
+      });
+      await flush();
+
+      await mockMouse.pressDown(69, 20);
+      await mockMouse.emitMouseEvent("drag", 70, 21);
+      await mockMouse.emitMouseEvent("drag", 74, 22);
+      await mockMouse.release(74, 22);
+
+      expect(windowFrom(registry.get(windowManagerAtom))).toMatchObject({
+        left: 24,
+        top: 5,
+        width: 51,
+        height: 18,
+      });
     } finally {
       root.unmount();
       renderer.destroy();

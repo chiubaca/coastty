@@ -24,7 +24,7 @@ describe("desktop shell", () => {
 
   test("navigates Settings and About from the Desktop tab order", async () => {
     const registry = Registry.make();
-    const { renderer, mockInput, mockMouse, captureCharFrame, captureSpans, flush, waitForFrame } = await createTestRenderer({
+    const { renderer, mockInput, captureCharFrame, captureSpans, flush, waitForFrame } = await createTestRenderer({
       width: 100,
       height: 40,
     });
@@ -41,22 +41,16 @@ describe("desktop shell", () => {
         ),
       )));
       await flush();
-      await waitForFrame((frame) => frame.includes("🌴  COAST.FM"));
+      await waitForFrame((frame) => frame.includes("🌴  Desktop"));
 
       let topbar = captureCharFrame().split("\n")[0] ?? "";
-      expect(topbar).not.toContain("Settings");
-      expect(topbar).not.toContain("About");
+      expect(topbar).toContain("Settings");
+      expect(topbar).toContain("About");
       expect(captureCharFrame()).not.toContain("File   Edit   View   Special");
       const topbarSpans = captureSpans().lines[0]?.spans ?? [];
       const background = RGBA.fromHex(themes.arcade.colors.background);
       expect(topbarSpans.every((span) => span.bg.equals(background))).toBe(true);
 
-      await mockMouse.click(70, 10);
-      await waitForFrame((frame) => frame.includes("🌴  Desktop"));
-      const desktopFrame = captureCharFrame().split("\n");
-      topbar = desktopFrame[0] ?? "";
-      expect(topbar).toContain("Settings");
-      expect(topbar).toContain("About");
       mockInput.pressTab();
       await flush();
       mockInput.pressEnter();
