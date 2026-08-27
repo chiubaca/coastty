@@ -493,6 +493,10 @@ export function makeStreamingAudio(
           return false;
         }
       }
+      if (engine.playbackAvailable === false) {
+        yield* fail("Playback device unavailable");
+        return false;
+      }
       renewEngineErrorSubscription();
       lastEngineFailure = undefined;
       if (!engine.start()) {

@@ -44,6 +44,7 @@ export interface AudioStreamPort {
 }
 
 export interface AudioEnginePort {
+  readonly playbackAvailable?: boolean;
   start(): boolean;
   stop(): boolean;
   playStreamUrl(url: string, options: AudioStreamUrlOptions): Promise<AudioStreamPort>;
@@ -112,9 +113,13 @@ function adaptStream(stream: Awaited<ReturnType<Audio["playStreamUrl"]>>): Audio
 export const openTuiAudioFactory: AudioFactory = {
   create: () => {
     const audio = Audio.create({ autoStart: false });
+    const playbackDevices = audio.listPlaybackDevices();
     const tapEnabled = audio.enableTap(8_192);
     let previousSpectrum: readonly number[] = [];
     return {
+      playbackAvailable: playbackDevices === null
+        ? undefined
+        : playbackDevices.some((device) => device.isDefault),
       start: () => audio.start(),
       stop: () => audio.stop(),
       playStreamUrl: async (url, options) => adaptStream(await audio.playStreamUrl(url, options)),
