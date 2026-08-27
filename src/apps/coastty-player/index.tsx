@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { TextAttributes, type BoxRenderable, type KeyEvent } from "@opentui/core";
-import { extend, useKeyboard } from "@opentui/react";
+import { extend, useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { THREE, ThreeRenderable } from "@opentui/three";
 import { useEffect, useRef, useState } from "react";
 import { MeshStandardNodeMaterial } from "three/webgpu";
@@ -218,6 +218,7 @@ type BlobScene = {
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
   readonly visual: THREE.Group;
+  readonly mesh: THREE.Mesh;
   readonly material: InstanceType<typeof MeshStandardNodeMaterial>;
   readonly waveStrength: { value: number };
   readonly rimLight: THREE.PointLight;
@@ -236,21 +237,40 @@ type BlobMotion = {
   treble: number;
   peak: number;
   beat: number;
+  target: BlobLevels;
+  targetBeat: number;
+  tempo: TempoDetector;
+  tempoColorMix: number;
+  rotationSpeed: number;
+  lastUpdatedAt: number | null;
 };
 
-const BLOB_PINK = new THREE.Color("#ff4fa3");
-const BLOB_VIOLET = new THREE.Color("#a78bfa");
+export type TempoDetector = {
+  readonly baseline: number;
+  readonly previousBass: number;
+  readonly lastOnsetAt: number | null;
+  readonly recentBpms: readonly number[];
+  readonly bpm: number | null;
+};
 
-function createBlobScene(): BlobScene {
+const BLOB_BLUE = new THREE.Color("#3b82f6");
+const BLOB_RED = new THREE.Color("#ef4444");
+
+export function blobDetailForViewport(width: number, height: number) {
+  const usableSize = Math.min(width, height * 2);
+  return Math.max(1, Math.min(5, Math.round(1 + (usableSize - 16) * 4 / 48)));
+}
+
+function createBlobScene(detail: number): BlobScene {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
-  camera.position.set(0, 0.35, 2);
+  camera.position.set(0, 0.35, 2.35);
   camera.lookAt(0, 0, 0);
 
   const material = new MeshStandardNodeMaterial({
-    color: BLOB_PINK,
-    emissive: BLOB_PINK,
-    emissiveIntensity: 0,
+    color: BLOB_BLUE,
+    emissive: BLOB_BLUE,
+    emissiveIntensity: 0.4,
     metalness: 1,
     roughness: 0.7,
     wireframe: true,
@@ -266,18 +286,19 @@ function createBlobScene(): BlobScene {
 
   const visual = new THREE.Group();
   visual.scale.setScalar(0.7);
-  visual.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 5), material));
+  const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, detail), material);
+  visual.add(mesh);
   scene.add(visual);
 
   scene.add(new THREE.AmbientLight(new THREE.Color("#7868c7"), 4));
   const keyLight = new THREE.DirectionalLight(new THREE.Color("#ffd166"), 8);
   keyLight.position.set(2.5, 3, 3);
   scene.add(keyLight);
-  const rimLight = new THREE.PointLight(new THREE.Color("#ff70b7"), 8, 10);
+  const rimLight = new THREE.PointLight(BLOB_BLUE, 8, 10);
   rimLight.position.set(-2.5, -1, 2);
   scene.add(rimLight);
 
-  return { scene, camera, visual, material, waveStrength, rimLight };
+  return { scene, camera, visual, mesh, material, waveStrength, rimLight };
 }
 
 export function blobWaveStrength(spectrum: readonly number[]) {
@@ -292,57 +313,147 @@ export function blobMusicLevels(spectrum: readonly number[]): BlobLevels {
     return band.length === 0 ? 0 : band.reduce((total, value) => total + value, 0) / band.length;
   };
 
-  const peak = values.reduce((maximum, value) => Math.max(maximum, value), 0);
-  return { bass: average(0), mid: average(bandSize), treble: average(bandSize * 2), peak };
+  const bass = average(0);
+  const mid = average(bandSize);
+  const treble = average(bandSize * 2);
+  return { bass, mid, treble, peak: Math.max(bass, mid, treble) };
 }
 
-function smooth(current: number, target: number) {
-  return current + (target - current) * (target > current ? 0.7 : 0.12);
+export function createTempoDetector(): TempoDetector {
+  return { baseline: 0, previousBass: 0, lastOnsetAt: null, recentBpms: [], bpm: null };
+}
+
+function normalizedBpm(intervalMs: number) {
+  let bpm = 60_000 / intervalMs;
+  while (bpm < 80) bpm *= 2;
+  while (bpm > 160) bpm /= 2;
+  return bpm;
+}
+
+export function updateTempoDetector(detector: TempoDetector, bass: number, timestamp: number): TempoDetector {
+  const level = Number.isFinite(bass) ? Math.max(0, Math.min(1, bass)) : 0;
+  const baseline = detector.baseline + (level - detector.baseline) * 0.08;
+  const elapsed = detector.lastOnsetAt === null ? null : timestamp - detector.lastOnsetAt;
+  const hasOnset = level >= Math.max(0.35, baseline + 0.1)
+    && level - detector.previousBass >= 0.08
+    && (elapsed === null || elapsed >= 250);
+  const next = { ...detector, baseline, previousBass: level };
+
+  if (!hasOnset) {
+    // A long silence starts a fresh estimate rather than joining unrelated tracks.
+    return elapsed !== null && elapsed > 4_000
+      ? { ...next, lastOnsetAt: null, recentBpms: [], bpm: null }
+      : next;
+  }
+
+  if (elapsed === null || elapsed > 1_500) return { ...next, lastOnsetAt: timestamp, recentBpms: [], bpm: null };
+
+  const recentBpms = [...detector.recentBpms, normalizedBpm(elapsed)].slice(-6);
+  const sorted = [...recentBpms].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)]!;
+  const bpm = detector.bpm === null ? median : detector.bpm + (median - detector.bpm) * 0.25;
+  return { ...next, lastOnsetAt: timestamp, recentBpms, bpm };
+}
+
+function smooth(current: number, target: number, elapsedSeconds: number, riseRate = 12, fallRate = 1.3) {
+  if (target === 0 && current < 0.003) return 0;
+  const rate = target > current ? riseRate : fallRate;
+  return current + (target - current) * (1 - Math.exp(-rate * elapsedSeconds));
 }
 
 function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
-  const [model] = useState(createBlobScene);
+  const { width, height } = useTerminalDimensions();
+  const [geometryDetail, setGeometryDetail] = useState(() => blobDetailForViewport(width, height));
+  const [model] = useState(() => createBlobScene(geometryDetail));
   const wave = blobWaveStrength(spectrum);
-  const motion = useRef<BlobMotion>({ ...blobMusicLevels(spectrum), beat: 0 });
+  const motion = useRef<BlobMotion>({
+    ...blobMusicLevels(spectrum),
+    beat: 0,
+    target: blobMusicLevels(spectrum),
+    targetBeat: 0,
+    tempo: createTempoDetector(),
+    tempoColorMix: 0,
+    rotationSpeed: 0,
+    lastUpdatedAt: null,
+  });
 
   useEffect(() => {
     model.scene.background = new THREE.Color(colors.background);
   }, [colors.background, model]);
 
   useEffect(() => {
+    const previousGeometry = model.mesh.geometry;
+    model.mesh.geometry = new THREE.IcosahedronGeometry(1.15, geometryDetail);
+    previousGeometry.dispose();
+  }, [geometryDetail, model]);
+
+  useEffect(() => {
     const current = motion.current;
     const target = blobMusicLevels(spectrum);
-    const bassRise = target.bass - current.bass;
+    const timestamp = Date.now();
+    current.tempo = updateTempoDetector(current.tempo, target.bass, timestamp);
+    const bassRise = target.bass - current.target.bass;
     const beat = target.bass > 0.45 && bassRise > 0.05 ? Math.min(1, bassRise * 4) : 0;
-    current.bass = target.bass === 0 ? 0 : smooth(current.bass, target.bass);
-    current.mid = smooth(current.mid, target.mid);
-    current.treble = smooth(current.treble, target.treble);
-    current.peak = target.peak === 0 ? 0 : smooth(current.peak, target.peak);
-    current.beat = smooth(current.beat, beat);
+    current.target = target;
+    current.targetBeat = beat;
+  }, [spectrum]);
 
-    model.waveStrength.value = current.peak * 3;
-    model.visual.scale.setScalar(0.7 + current.bass * 0.25);
-    model.material.emissiveIntensity = current.mid * 1.5;
-    model.material.opacity = 0.1 + current.mid * 0.3;
-    model.material.roughness = 0.7 - current.mid * 0.45;
-    const colorMix = Math.min(1, (current.mid + current.treble) / 1.5);
-    model.material.color.lerpColors(BLOB_PINK, BLOB_VIOLET, colorMix);
-    model.material.emissive.lerpColors(BLOB_PINK, BLOB_VIOLET, colorMix);
-    model.rimLight.intensity = 8 + current.treble * 22;
+  useEffect(() => {
+    const animation = setInterval(() => {
+      const current = motion.current;
+      const timestamp = Date.now();
+      const elapsedSeconds = current.lastUpdatedAt === null
+        ? 0
+        : Math.min(0.2, Math.max(0, timestamp - current.lastUpdatedAt) / 1_000);
+      current.lastUpdatedAt = timestamp;
+      current.bass = smooth(current.bass, current.target.bass, elapsedSeconds);
+      current.mid = smooth(current.mid, current.target.mid, elapsedSeconds);
+      current.treble = smooth(current.treble, current.target.treble, elapsedSeconds);
+      current.peak = smooth(current.peak, current.target.peak, elapsedSeconds);
+      current.beat = smooth(current.beat, current.targetBeat, elapsedSeconds);
 
-    const fov = 44 - current.beat * 5;
-    if (model.camera.fov !== fov) {
-      model.camera.fov = fov;
-      model.camera.updateProjectionMatrix();
-    }
-    const rotation = 0.3 + current.treble * 0.9;
-    model.visual.rotation.x += 0.012 * rotation;
-    model.visual.rotation.y += 0.019 * rotation;
-  }, [model, spectrum]);
+      model.waveStrength.value = current.peak * 3;
+      model.visual.scale.setScalar(0.7 + current.bass * 0.25);
+      model.material.emissiveIntensity = 0.4;
+      model.material.opacity = 0.1 + current.mid * 0.3;
+      model.material.roughness = 0.7 - current.mid * 0.45;
+      const targetTempoColorMix = current.tempo.bpm === null
+        ? 0
+        : Math.max(0, Math.min(1, (current.tempo.bpm - 80) / 80));
+      current.tempoColorMix = smooth(current.tempoColorMix, targetTempoColorMix, elapsedSeconds, 2, 2);
+      model.material.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
+      model.material.emissive.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
+      model.rimLight.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
+      model.rimLight.intensity = 8 + current.treble * 22;
+
+      const fov = 44 - current.beat * 5;
+      if (model.camera.fov !== fov) {
+        model.camera.fov = fov;
+        model.camera.updateProjectionMatrix();
+      }
+      const tempoRotationSpeed = current.tempo.bpm === null
+        ? 0
+        : Math.max(0.5, Math.min(3, 0.5 + (current.tempo.bpm - 80) * 2.5 / 80));
+      const targetRotationSpeed = current.peak === 0 ? 0 : tempoRotationSpeed;
+      current.rotationSpeed = smooth(current.rotationSpeed, targetRotationSpeed, elapsedSeconds);
+      model.visual.rotation.x += elapsedSeconds * current.rotationSpeed * 0.6;
+      model.visual.rotation.y += elapsedSeconds * current.rotationSpeed;
+    }, 16);
+    return () => clearInterval(animation);
+  }, [model]);
 
   return (
     <box flexGrow={1} minHeight={1} backgroundColor={colors.background}>
-      <three flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
+      <three
+        flexGrow={1}
+        minHeight={1}
+        scene={model.scene}
+        camera={model.camera}
+        onSizeChange={function () {
+          const detail = blobDetailForViewport(this.width, this.height);
+          setGeometryDetail((current) => current === detail ? current : detail);
+        }}
+      />
       <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
         <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>WAVE {wave.toFixed(1)} / 3.0</CoasttyText>
       </box>

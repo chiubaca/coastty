@@ -10,6 +10,8 @@ export class ManagedWindow extends Data.Class<{
   readonly title: string;
   readonly left: number;
   readonly top: number;
+  readonly width: number;
+  readonly height: number;
   readonly zIndex: number;
   readonly minimized: boolean;
 }> {}
@@ -28,6 +30,7 @@ export type WindowCommand = Data.TaggedEnum<{
   Focus: { readonly appId: string };
   FocusDesktop: {};
   Move: { readonly appId: string; readonly left: number; readonly top: number };
+  Resize: { readonly appId: string; readonly left: number; readonly top: number; readonly width: number; readonly height: number };
   SetTitle: { readonly appId: string; readonly title: string };
 }>;
 
@@ -55,6 +58,8 @@ function openWindow(
     title: app.title,
     left: position?.left ?? app.initialPosition.left,
     top: position?.top ?? app.initialPosition.top,
+    width: app.initialSize.width,
+    height: app.initialSize.height,
     zIndex: state.nextZIndex,
     minimized: false,
   });
@@ -134,6 +139,22 @@ function moveWindow(state: WindowManagerState, appId: string, left: number, top:
   });
 }
 
+function resizeWindow(
+  state: WindowManagerState,
+  appId: string,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): WindowManagerState {
+  const maybeWindow = HashMap.get(state.windows, appId);
+  if (Option.isNone(maybeWindow)) return state;
+
+  return updateState(state, {
+    windows: HashMap.set(state.windows, appId, new ManagedWindow({ ...maybeWindow.value, left, top, width, height })),
+  });
+}
+
 function setWindowTitle(state: WindowManagerState, appId: string, title: string): WindowManagerState {
   const maybeWindow = HashMap.get(state.windows, appId);
   if (Option.isNone(maybeWindow)) return state;
@@ -152,6 +173,7 @@ export function reduceWindowManager(state: WindowManagerState, command: WindowCo
     Focus: ({ appId }) => focusWindow(state, appId),
     FocusDesktop: () => focusDesktop(state),
     Move: ({ appId, left, top }) => moveWindow(state, appId, left, top),
+    Resize: ({ appId, left, top, width, height }) => resizeWindow(state, appId, left, top, width, height),
     SetTitle: ({ appId, title }) => setWindowTitle(state, appId, title),
   });
 }

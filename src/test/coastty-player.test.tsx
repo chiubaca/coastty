@@ -2,7 +2,16 @@ import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot, flushSync } from "@opentui/react";
 import { createElement } from "react";
-import { blobMusicLevels, blobWaveStrength, CoasttyPlayerView, playbackCommandForKey, visualizerForKey } from "../apps/coastty-player";
+import {
+  blobMusicLevels,
+  blobWaveStrength,
+  blobDetailForViewport,
+  CoasttyPlayerView,
+  createTempoDetector,
+  playbackCommandForKey,
+  updateTempoDetector,
+  visualizerForKey,
+} from "../apps/coastty-player";
 import { initialPlaybackSnapshot, PlaybackCommand, type PlaybackCommand as PlaybackCommandType } from "../radio/playback";
 
 describe("COAST.FM player", () => {
@@ -53,6 +62,37 @@ describe("COAST.FM player", () => {
     expect(levels.mid).toBeCloseTo(0.6);
     expect(levels.treble).toBeCloseTo(0.3);
     expect(levels.peak).toBeCloseTo(0.9);
+  });
+
+  test("uses the strongest frequency band for waviness", () => {
+    const levels = blobMusicLevels([
+      1, ...Array<number>(7).fill(0),
+      ...Array<number>(8).fill(0.4),
+      ...Array<number>(8).fill(0.2),
+    ]);
+
+    expect(levels.bass).toBeCloseTo(0.125);
+    expect(levels.peak).toBeCloseTo(0.4);
+  });
+
+  test("infers tempo from spaced bass onsets", () => {
+    let detector = createTempoDetector();
+    for (let timestamp = 0; timestamp <= 2_500; timestamp += 100) {
+      detector = updateTempoDetector(detector, timestamp % 500 === 0 ? 0.85 : 0.1, timestamp);
+    }
+
+    expect(detector.bpm).toBeCloseTo(120);
+  });
+
+  test("uses a responsive blob detail level", () => {
+    expect(blobDetailForViewport(16, 8)).toBe(1);
+    expect(blobDetailForViewport(40, 20)).toBe(3);
+    expect(blobDetailForViewport(80, 40)).toBe(5);
+  });
+
+  test("resets a stale tempo estimate", () => {
+    const detector = updateTempoDetector(createTempoDetector(), 0.85, 0);
+    expect(updateTempoDetector(detector, 0.1, 4_100).bpm).toBeNull();
   });
 
   test("maps the visualizer shortcuts", () => {
