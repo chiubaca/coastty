@@ -2,6 +2,7 @@ import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { TextAttributes, type BoxRenderable, type KeyEvent } from "@opentui/core";
 import { extend, useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { THREE, ThreeRenderable } from "@opentui/three";
+import { writeFile } from "node:fs/promises";
 import { useEffect, useRef, useState } from "react";
 import { MeshStandardNodeMaterial } from "three/webgpu";
 import { positionLocal, time, uniform, vec3 } from "three/tsl";
@@ -48,11 +49,12 @@ export function playbackCommandForKey(key: Pick<KeyEvent, "name" | "sequence">, 
 }
 
 type SidebarSection = "radio" | "playlists";
-type Visualizer = "Bars" | "3D Blob";
+type Visualizer = "2D Bars" | "3D Bars" | "3D Blob";
 
 export function visualizerForKey(key: Pick<KeyEvent, "sequence">): Visualizer | null {
-  if (key.sequence === "1") return "Bars";
-  if (key.sequence === "2") return "3D Blob";
+  if (key.sequence === "1") return "2D Bars";
+  if (key.sequence === "2") return "3D Bars";
+  if (key.sequence === "3") return "3D Blob";
   return null;
 }
 
@@ -197,8 +199,74 @@ function PlayerSidebar({
   );
 }
 
+const BAR_COUNT = 24;
+const BARS_CAMERA_SETTINGS_EXPORT_PATH = "coastty-player-bars-camera.json";
+
+export type BarsCameraSettings = {
+  readonly fov: number;
+  readonly sceneRotationY: number;
+  readonly position: { readonly x: number; readonly y: number; readonly z: number };
+  readonly target: { readonly x: number; readonly y: number; readonly z: number };
+};
+
+const DEFAULT_BARS_CAMERA_SETTINGS: BarsCameraSettings = {
+  fov: 42,
+  sceneRotationY: -1.529,
+  position: { x: 2.087, y: 0.403, z: 3.583 },
+  target: { x: -0.152, y: -1.089, z: 1.344 },
+};
+
+type BarsScene = {
+  readonly scene: THREE.Scene;
+  readonly camera: THREE.PerspectiveCamera;
+  readonly target: THREE.Vector3;
+  readonly visual: THREE.Group;
+  readonly bars: readonly THREE.Mesh[];
+  readonly materials: readonly InstanceType<typeof MeshStandardNodeMaterial>[];
+  readonly ambientLight: THREE.AmbientLight;
+  readonly keyLight: THREE.DirectionalLight;
+  readonly rimLight: THREE.PointLight;
+};
+
+type BarsMotion = {
+  heights: number[];
+  target: readonly number[];
+  lastUpdatedAt: number | null;
+};
+
+function roundedCameraValue(value: number) {
+  return Math.round(value * 1_000) / 1_000;
+}
+
+export function barsCameraSettings(
+  camera: Pick<THREE.PerspectiveCamera, "fov" | "position">,
+  target: THREE.Vector3,
+  sceneRotationY = 0,
+): BarsCameraSettings {
+  return {
+    fov: roundedCameraValue(camera.fov),
+    sceneRotationY: roundedCameraValue(sceneRotationY),
+    position: {
+      x: roundedCameraValue(camera.position.x),
+      y: roundedCameraValue(camera.position.y),
+      z: roundedCameraValue(camera.position.z),
+    },
+    target: {
+      x: roundedCameraValue(target.x),
+      y: roundedCameraValue(target.y),
+      z: roundedCameraValue(target.z),
+    },
+  };
+}
+
+export function barHeights(spectrum: readonly number[], count = BAR_COUNT) {
+  const values = spectrum.map((value) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
+  if (values.length === 0) return Array<number>(count).fill(0);
+  return Array.from({ length: count }, (_, index) => values[Math.min(values.length - 1, Math.floor(index * values.length / count))]!);
+}
+
 function Spectrum({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
-  const values = spectrum.length > 0 ? spectrum : Array<number>(24).fill(0);
+  const values = spectrum.length > 0 ? spectrum : Array<number>(BAR_COUNT).fill(0);
   return (
     <box flexGrow={1} minWidth={1} paddingX={1} paddingTop={1} flexDirection="row" alignItems="flex-end">
       {values.map((value, index) => (
@@ -210,6 +278,235 @@ function Spectrum({ spectrum, colors }: { readonly spectrum: readonly number[]; 
           />
         </box>
       ))}
+    </box>
+  );
+}
+
+function createBarsScene(): BarsScene {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(DEFAULT_BARS_CAMERA_SETTINGS.fov, 1, 0.1, 100);
+  const target = new THREE.Vector3(
+    DEFAULT_BARS_CAMERA_SETTINGS.target.x,
+    DEFAULT_BARS_CAMERA_SETTINGS.target.y,
+    DEFAULT_BARS_CAMERA_SETTINGS.target.z,
+  );
+  camera.position.set(
+    DEFAULT_BARS_CAMERA_SETTINGS.position.x,
+    DEFAULT_BARS_CAMERA_SETTINGS.position.y,
+    DEFAULT_BARS_CAMERA_SETTINGS.position.z,
+  );
+  camera.lookAt(target);
+
+  const visual = new THREE.Group();
+  visual.rotation.y = DEFAULT_BARS_CAMERA_SETTINGS.sceneRotationY;
+  const geometry = new THREE.BoxGeometry(0.18, 1, 0.56);
+  const bars = Array.from({ length: BAR_COUNT }, (_, index) => {
+    const material = new MeshStandardNodeMaterial({
+      color: new THREE.Color("#7cffc9"),
+      emissive: new THREE.Color("#4ba58e"),
+      emissiveIntensity: 0.45,
+      metalness: 0.92,
+      roughness: 0.24,
+    });
+    const bar = new THREE.Mesh(geometry, material);
+    bar.position.set((index - (BAR_COUNT - 1) / 2) * 0.28, -1.26, 0);
+    bar.scale.set(1, 0.04, 1);
+    bar.rotation.y = index % 2 === 0 ? -0.09 : 0.09;
+    visual.add(bar);
+    return bar;
+  });
+  scene.add(visual);
+
+  const ambientLight = new THREE.AmbientLight(new THREE.Color("#4ba58e"), 2.2);
+  scene.add(ambientLight);
+  const keyLight = new THREE.DirectionalLight(new THREE.Color("#b9ffe8"), 4.5);
+  keyLight.position.set(2.5, 4, 3);
+  scene.add(keyLight);
+  const rimLight = new THREE.PointLight(new THREE.Color("#7cffc9"), 16, 10);
+  rimLight.position.set(-2.5, 1, 2);
+  scene.add(rimLight);
+
+  return {
+    scene,
+    camera,
+    target,
+    visual,
+    bars,
+    materials: bars.map((bar) => bar.material as InstanceType<typeof MeshStandardNodeMaterial>),
+    ambientLight,
+    keyLight,
+    rimLight,
+  };
+}
+
+function panBarsCamera(model: BarsScene, horizontal: number, vertical: number) {
+  const movement = new THREE.Vector3(1, 0, 0)
+    .applyQuaternion(model.camera.quaternion)
+    .multiplyScalar(horizontal)
+    .add(new THREE.Vector3(0, 1, 0).applyQuaternion(model.camera.quaternion).multiplyScalar(vertical));
+  model.camera.position.add(movement);
+  model.target.add(movement);
+  model.camera.lookAt(model.target);
+}
+
+function zoomBarsCamera(model: BarsScene, delta: number) {
+  const offset = model.camera.position.clone().sub(model.target);
+  const distance = Math.max(3.5, Math.min(12, offset.length() + delta));
+  model.camera.position.copy(model.target).add(offset.setLength(distance));
+  model.camera.lookAt(model.target);
+}
+
+function cameraDistance(settings: BarsCameraSettings) {
+  return Math.hypot(
+    settings.position.x - settings.target.x,
+    settings.position.y - settings.target.y,
+    settings.position.z - settings.target.z,
+  );
+}
+
+function sceneRotationDegrees(settings: BarsCameraSettings) {
+  return Math.round(settings.sceneRotationY * 180 / Math.PI);
+}
+
+function BarsVisualizer({ spectrum, colors, focused }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors; readonly focused: boolean }) {
+  const [model] = useState(createBarsScene);
+  const sceneRotation = useRef(DEFAULT_BARS_CAMERA_SETTINGS.sceneRotationY);
+  const [settings, setSettings] = useState(() => barsCameraSettings(model.camera, model.target, sceneRotation.current));
+  const [exportStatus, setExportStatus] = useState<"idle" | "success" | "error">("idle");
+  const motion = useRef<BarsMotion>({
+    heights: Array<number>(BAR_COUNT).fill(0),
+    target: barHeights(spectrum),
+    lastUpdatedAt: null,
+  });
+  const dragPosition = useRef<readonly [number, number] | null>(null);
+
+  function publishSettings() {
+    setSettings(barsCameraSettings(model.camera, model.target, sceneRotation.current));
+  }
+
+  function pan(horizontal: number, vertical: number) {
+    panBarsCamera(model, horizontal, vertical);
+    publishSettings();
+  }
+
+  function zoom(delta: number) {
+    zoomBarsCamera(model, delta);
+    publishSettings();
+  }
+
+  function rotate(delta: number) {
+    sceneRotation.current += delta;
+    model.visual.rotation.y = sceneRotation.current;
+    publishSettings();
+  }
+
+  async function exportCameraSettings() {
+    try {
+      await writeFile(BARS_CAMERA_SETTINGS_EXPORT_PATH, `${JSON.stringify(barsCameraSettings(model.camera, model.target, sceneRotation.current), null, 2)}\n`);
+      setExportStatus("success");
+    } catch {
+      setExportStatus("error");
+    }
+  }
+
+  useKeyboard((key) => {
+    if (!focused) return;
+    if (key.sequence === "[") zoom(0.4);
+    if (key.sequence === "]") zoom(-0.4);
+    if (key.sequence === ",") rotate(-0.1);
+    if (key.sequence === ".") rotate(0.1);
+    if (key.sequence?.toLowerCase() === "e") void exportCameraSettings();
+  });
+
+  useEffect(() => {
+    model.scene.background = new THREE.Color(colors.background);
+    const barColors = [colors.accent, colors.highlight, colors.secondary];
+    model.materials.forEach((material, index) => {
+      const color = barColors[index % barColors.length]!;
+      material.color.set(color);
+      material.emissive.set(color);
+    });
+    model.ambientLight.color.set(colors.secondary);
+    model.keyLight.color.set(colors.glow);
+    model.rimLight.color.set(colors.accent);
+  }, [colors, model]);
+
+  useEffect(() => {
+    motion.current.target = barHeights(spectrum);
+  }, [spectrum]);
+
+  useEffect(() => {
+    const animation = setInterval(() => {
+      const current = motion.current;
+      const timestamp = Date.now();
+      const elapsedSeconds = current.lastUpdatedAt === null
+        ? 0
+        : Math.min(0.2, Math.max(0, timestamp - current.lastUpdatedAt) / 1_000);
+      current.lastUpdatedAt = timestamp;
+
+      model.bars.forEach((bar, index) => {
+        const height = smooth(current.heights[index] ?? 0, current.target[index] ?? 0, elapsedSeconds, 16, 2.8);
+        current.heights[index] = height;
+        const scale = 0.06 + height * 3.7;
+        bar.scale.y = scale;
+        bar.position.y = -1.3 + scale / 2;
+        bar.scale.z = 0.9 + height * 0.35;
+        (bar.material as InstanceType<typeof MeshStandardNodeMaterial>).emissiveIntensity = 0.28 + height * 1.1;
+      });
+      model.rimLight.intensity = 10 + Math.max(...current.heights) * 14;
+    }, 16);
+    return () => clearInterval(animation);
+  }, [model]);
+
+  return (
+    <box
+      flexGrow={1}
+      minHeight={1}
+      backgroundColor={colors.background}
+      onMouseDown={(event) => {
+        dragPosition.current = [event.x, event.y];
+      }}
+      onMouseDrag={(event) => {
+        const previous = dragPosition.current;
+        dragPosition.current = [event.x, event.y];
+        if (!previous) return;
+        if (event.modifiers.shift) {
+          rotate((event.x - previous[0]) * 0.05);
+          return;
+        }
+        const distance = cameraDistance(settings);
+        pan((previous[0] - event.x) * distance * 0.015, (event.y - previous[1]) * distance * 0.015);
+      }}
+      onMouseDragEnd={() => {
+        dragPosition.current = null;
+      }}
+      onMouseScroll={(event) => {
+        if (event.scroll?.direction === "up") zoom(-0.4);
+        if (event.scroll?.direction === "down") zoom(0.4);
+      }}
+    >
+      <three flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
+      <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
+        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>3D SPECTRUM</CoasttyText>
+      </box>
+      <box position="absolute" bottom={0} left={0} right={0} height={1} flexDirection="row" backgroundColor={colors.shadow}>
+        <box flexGrow={1} paddingLeft={1}>
+          <CoasttyText fg={colors.primary}>PAN {settings.target.x.toFixed(1)}/{settings.target.y.toFixed(1)} Z {cameraDistance(settings).toFixed(1)} [,.] ROT {sceneRotationDegrees(settings)}</CoasttyText>
+        </box>
+        <box
+          width={exportStatus === "idle" ? 18 : 10}
+          justifyContent="center"
+          backgroundColor={exportStatus === "error" ? colors.highlight : colors.accent}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            void exportCameraSettings();
+          }}
+        >
+          <CoasttyText fg={colors.background} attributes={TextAttributes.BOLD}>
+            {exportStatus === "success" ? "EXPORTED" : exportStatus === "error" ? "EXPORT FAILED" : "[E] EXPORT CAMERA"}
+          </CoasttyText>
+        </box>
+      </box>
     </box>
   );
 }
@@ -601,8 +898,10 @@ export function CoasttyPlayerView({
               {snapshot.status.toUpperCase()}
             </CoasttyText>
           </box>
-          {visualizer === "Bars"
+          {visualizer === "2D Bars"
             ? <Spectrum spectrum={snapshot.spectrum} colors={colors} />
+            : visualizer === "3D Bars"
+            ? <BarsVisualizer spectrum={snapshot.spectrum} colors={colors} focused={focused} />
             : <BlobVisualizer spectrum={snapshot.spectrum} colors={colors} />}
         </box>
       </box>
@@ -645,10 +944,18 @@ export function CoasttyPlayerView({
         <box
           flexGrow={1}
           justifyContent="center"
-          backgroundColor={visualizer === "Bars" ? colors.accent : colors.shadow}
-          onMouseDown={() => setVisualizer("Bars")}
+          backgroundColor={visualizer === "2D Bars" ? colors.accent : colors.shadow}
+          onMouseDown={() => setVisualizer("2D Bars")}
         >
-          <CoasttyText fg={visualizer === "Bars" ? colors.background : colors.primary} attributes={visualizer === "Bars" ? TextAttributes.BOLD : undefined}>[1] BARS</CoasttyText>
+          <CoasttyText fg={visualizer === "2D Bars" ? colors.background : colors.primary} attributes={visualizer === "2D Bars" ? TextAttributes.BOLD : undefined}>[1] 2D BARS</CoasttyText>
+        </box>
+        <box
+          flexGrow={1}
+          justifyContent="center"
+          backgroundColor={visualizer === "3D Bars" ? colors.accent : colors.shadow}
+          onMouseDown={() => setVisualizer("3D Bars")}
+        >
+          <CoasttyText fg={visualizer === "3D Bars" ? colors.background : colors.primary} attributes={visualizer === "3D Bars" ? TextAttributes.BOLD : undefined}>[2] 3D BARS</CoasttyText>
         </box>
         <box
           flexGrow={1}
@@ -656,7 +963,7 @@ export function CoasttyPlayerView({
           backgroundColor={visualizer === "3D Blob" ? colors.accent : colors.shadow}
           onMouseDown={() => setVisualizer("3D Blob")}
         >
-          <CoasttyText fg={visualizer === "3D Blob" ? colors.background : colors.primary} attributes={visualizer === "3D Blob" ? TextAttributes.BOLD : undefined}>[2] BLOB</CoasttyText>
+          <CoasttyText fg={visualizer === "3D Blob" ? colors.background : colors.primary} attributes={visualizer === "3D Blob" ? TextAttributes.BOLD : undefined}>[3] BLOB</CoasttyText>
         </box>
       </box>
     </box>

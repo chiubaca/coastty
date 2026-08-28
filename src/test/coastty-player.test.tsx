@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot, flushSync } from "@opentui/react";
+import { THREE } from "@opentui/three";
 import { createElement } from "react";
 import {
   blobMusicLevels,
   blobWaveStrength,
   blobDetailForViewport,
+  barHeights,
+  barsCameraSettings,
   CoasttyPlayerView,
   createTempoDetector,
   playbackCommandForKey,
@@ -17,7 +20,7 @@ import { initialPlaybackSnapshot, PlaybackCommand, type PlaybackCommand as Playb
 describe("COAST.FM player", () => {
   test("uses 3D Blob by default and shows a separate visualizer control pane", async () => {
     const commands: PlaybackCommandType[] = [];
-    const { renderer, flush, captureCharFrame } = await createTestRenderer({ width: 54, height: 14 });
+    const { renderer, mockMouse, flush, captureCharFrame } = await createTestRenderer({ width: 54, height: 14 });
     const root = createRoot(renderer);
 
     try {
@@ -32,11 +35,35 @@ describe("COAST.FM player", () => {
       expect(frame).toContain("NOW PLAYING");
       expect(frame).toContain("|< PREV");
       expect(frame).toContain("> PLAY");
-      expect(frame).toContain("[1] BARS");
-      expect(frame).toContain("[2] BLOB");
+      expect(frame).toContain("[1] 2D BARS");
+      expect(frame).toContain("[2] 3D BARS");
+      expect(frame).toContain("[3] BLOB");
       expect(frame).toContain("WAVE 0.0 / 3.0");
       expect(frame).not.toContain("COMING SOON");
       expect(commands).toEqual([]);
+
+      await mockMouse.pressDown(27, 13);
+      await mockMouse.release(27, 13);
+      await flush();
+      frame = captureCharFrame();
+      expect(frame).toContain("3D SPECTRUM");
+      expect(frame).toContain("[E] EXPORT CAMERA");
+      expect(frame).toContain("PAN -0.2/-1.1");
+      expect(frame).toContain("Z 3.5");
+      expect(frame).toContain("[,.] ROT -88");
+      expect(frame).not.toContain("WAVE 0.0 / 3.0");
+
+      await mockMouse.drag(20, 5, 24, 7);
+      await mockMouse.scroll(20, 5, "down");
+      await flush();
+      frame = captureCharFrame();
+      expect(frame).not.toContain("PAN -0.2/-1.1");
+      expect(frame).toContain("Z 3.9");
+
+      await mockMouse.drag(20, 5, 24, 5, 0, { modifiers: { shift: true } });
+      await flush();
+      frame = captureCharFrame();
+      expect(frame).toContain("[,.] ROT -76");
     } finally {
       root.unmount();
       renderer.destroy();
@@ -49,6 +76,24 @@ describe("COAST.FM player", () => {
     expect(blobWaveStrength([0.5, 0.2, 0.1])).toBe(1.5);
     expect(blobWaveStrength([1, 0.8, 0.2])).toBe(3);
     expect(blobWaveStrength([2])).toBe(3);
+  });
+
+  test("expands and sanitizes spectrum data for the 3D bars", () => {
+    expect(barHeights([], 3)).toEqual([0, 0, 0]);
+    expect(barHeights([0.2, 0.8], 4)).toEqual([0.2, 0.2, 0.8, 0.8]);
+    expect(barHeights([-1, Number.NaN, 2], 3)).toEqual([0, 0, 1]);
+  });
+
+  test("exports rounded 3D bar camera settings", () => {
+    const camera = new THREE.PerspectiveCamera(42.12345, 1, 0.1, 100);
+    camera.position.set(4.12345, 2.34567, -6.78901);
+
+    expect(barsCameraSettings(camera, new THREE.Vector3(-1.2347, 0.7777, 3.21))).toEqual({
+      fov: 42.123,
+      sceneRotationY: 0,
+      position: { x: 4.123, y: 2.346, z: -6.789 },
+      target: { x: -1.235, y: 0.778, z: 3.21 },
+    });
   });
 
   test("separates the spectrum into bass, mid, and treble responses", () => {
@@ -96,8 +141,9 @@ describe("COAST.FM player", () => {
   });
 
   test("maps the visualizer shortcuts", () => {
-    expect(visualizerForKey({ sequence: "1" })).toBe("Bars");
-    expect(visualizerForKey({ sequence: "2" })).toBe("3D Blob");
+    expect(visualizerForKey({ sequence: "1" })).toBe("2D Bars");
+    expect(visualizerForKey({ sequence: "2" })).toBe("3D Bars");
+    expect(visualizerForKey({ sequence: "3" })).toBe("3D Blob");
     expect(visualizerForKey({ sequence: "b" })).toBeNull();
   });
 
