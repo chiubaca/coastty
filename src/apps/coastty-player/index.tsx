@@ -1,6 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { TextAttributes, type BoxRenderable, type KeyEvent } from "@opentui/core";
-import { extend, useKeyboard, useTerminalDimensions } from "@opentui/react";
+import { extend, useKeyboard } from "@opentui/react";
 import { THREE, ThreeRenderable } from "@opentui/three";
 import { writeFile } from "node:fs/promises";
 import { useEffect, useRef, useState } from "react";
@@ -62,6 +62,7 @@ type CoasttyPlayerViewProps = {
   readonly snapshot: PlaybackSnapshot;
   readonly dispatch: (command: PlaybackCommandType) => void;
   readonly colors?: ThemeColors;
+  readonly contentSize?: { readonly width: number; readonly height: number };
   readonly focused?: boolean;
   readonly sidebarInitiallyOpen?: boolean;
 };
@@ -567,12 +568,12 @@ function createBlobScene(detail: number): BlobScene {
   const material = new MeshStandardNodeMaterial({
     color: BLOB_BLUE,
     emissive: BLOB_BLUE,
-    emissiveIntensity: 0.4,
+    emissiveIntensity: 1.5,
     metalness: 1,
     roughness: 0.7,
     wireframe: true,
     wireframeLinewidth: 2,
-    opacity: 0.1,
+    opacity: 0.5,
     transparent: true,
   });
   const waveStrength = uniform(0);
@@ -658,9 +659,16 @@ function smooth(current: number, target: number, elapsedSeconds: number, riseRat
   return current + (target - current) * (1 - Math.exp(-rate * elapsedSeconds));
 }
 
-function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
-  const { width, height } = useTerminalDimensions();
-  const [geometryDetail, setGeometryDetail] = useState(() => blobDetailForViewport(width, height));
+function BlobVisualizer({
+  spectrum,
+  colors,
+  contentSize,
+}: {
+  readonly spectrum: readonly number[];
+  readonly colors: ThemeColors;
+  readonly contentSize: { readonly width: number; readonly height: number };
+}) {
+  const [geometryDetail, setGeometryDetail] = useState(() => blobDetailForViewport(contentSize.width, contentSize.height));
   const [model] = useState(() => createBlobScene(geometryDetail));
   const wave = blobWaveStrength(spectrum);
   const motion = useRef<BlobMotion>({
@@ -677,6 +685,11 @@ function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly numb
   useEffect(() => {
     model.scene.background = new THREE.Color(colors.background);
   }, [colors.background, model]);
+
+  useEffect(() => {
+    const detail = blobDetailForViewport(contentSize.width, contentSize.height);
+    setGeometryDetail((current) => current === detail ? current : detail);
+  }, [contentSize.height, contentSize.width]);
 
   useEffect(() => {
     const previousGeometry = model.mesh.geometry;
@@ -711,8 +724,8 @@ function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly numb
 
       model.waveStrength.value = current.peak * 3;
       model.visual.scale.setScalar(0.7 + current.bass * 0.25);
-      model.material.emissiveIntensity = 0.4;
-      model.material.opacity = 0.1 + current.mid * 0.3;
+      model.material.emissiveIntensity = 1.5 + current.peak * 1.5;
+      model.material.opacity = 0.5 + current.mid * 0.35;
       model.material.roughness = 0.7 - current.mid * 0.45;
       const targetTempoColorMix = current.tempo.bpm === null
         ? 0
@@ -721,7 +734,7 @@ function BlobVisualizer({ spectrum, colors }: { readonly spectrum: readonly numb
       model.material.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
       model.material.emissive.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
       model.rimLight.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
-      model.rimLight.intensity = 8 + current.treble * 22;
+      model.rimLight.intensity = 20 + current.treble * 38;
 
       const fov = 44 - current.beat * 5;
       if (model.camera.fov !== fov) {
@@ -808,6 +821,7 @@ export function CoasttyPlayerView({
   snapshot,
   dispatch,
   colors = themes.phosphor.colors,
+  contentSize = { width: 0, height: 0 },
   focused = true,
   sidebarInitiallyOpen = false,
 }: CoasttyPlayerViewProps) {
@@ -902,7 +916,7 @@ export function CoasttyPlayerView({
             ? <Spectrum spectrum={snapshot.spectrum} colors={colors} />
             : visualizer === "3D Bars"
             ? <BarsVisualizer spectrum={snapshot.spectrum} colors={colors} focused={focused} />
-            : <BlobVisualizer spectrum={snapshot.spectrum} colors={colors} />}
+            : <BlobVisualizer spectrum={snapshot.spectrum} colors={colors} contentSize={contentSize} />}
         </box>
       </box>
 
@@ -970,7 +984,7 @@ export function CoasttyPlayerView({
   );
 }
 
-export function CoasttyPlayer({ appId }: AppComponentProps) {
+export function CoasttyPlayer({ appId, contentSize }: AppComponentProps) {
   const { theme: { colors } } = useTheme();
   const snapshot = useAtomValue(playbackStateAtom);
   const focused = useAtomValue(windowFocusedAtom(appId));
@@ -981,5 +995,11 @@ export function CoasttyPlayer({ appId }: AppComponentProps) {
     dispatchWindow(WindowCommand.SetTitle({ appId, title: `COAST.FM - ${snapshot.selected.name}` }));
   }, [appId, dispatchWindow, snapshot.selected.name]);
 
-  return <CoasttyPlayerView snapshot={snapshot} dispatch={dispatchPlayback} colors={colors} focused={focused} />;
+  return <CoasttyPlayerView
+    snapshot={snapshot}
+    dispatch={dispatchPlayback}
+    colors={colors}
+    contentSize={contentSize}
+    focused={focused}
+  />;
 }
