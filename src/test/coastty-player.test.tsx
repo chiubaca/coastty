@@ -1,14 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot, flushSync } from "@opentui/react";
-import { THREE } from "@opentui/three";
 import { createElement } from "react";
 import {
   blobMusicLevels,
   blobWaveStrength,
-  blobDetailForViewport,
   barHeights,
-  barsCameraSettings,
   CoasttyPlayerView,
   createTempoDetector,
   playbackCommandForKey,
@@ -47,23 +44,10 @@ describe("COAST.FM player", () => {
       await flush();
       frame = captureCharFrame();
       expect(frame).toContain("3D SPECTRUM");
-      expect(frame).toContain("[E] EXPORT CAMERA");
-      expect(frame).toContain("PAN -0.2/-1.1");
-      expect(frame).toContain("Z 3.5");
-      expect(frame).toContain("[,.] ROT -88");
+      expect(frame).not.toContain("EXPORT CAMERA");
+      expect(frame).not.toContain("PAN ");
+      expect(frame).not.toContain("ROT ");
       expect(frame).not.toContain("WAVE 0.0 / 3.0");
-
-      await mockMouse.drag(20, 5, 24, 7);
-      await mockMouse.scroll(20, 5, "down");
-      await flush();
-      frame = captureCharFrame();
-      expect(frame).not.toContain("PAN -0.2/-1.1");
-      expect(frame).toContain("Z 3.9");
-
-      await mockMouse.drag(20, 5, 24, 5, 0, { modifiers: { shift: true } });
-      await flush();
-      frame = captureCharFrame();
-      expect(frame).toContain("[,.] ROT -76");
     } finally {
       root.unmount();
       renderer.destroy();
@@ -82,18 +66,6 @@ describe("COAST.FM player", () => {
     expect(barHeights([], 3)).toEqual([0, 0, 0]);
     expect(barHeights([0.2, 0.8], 4)).toEqual([0.2, 0.2, 0.8, 0.8]);
     expect(barHeights([-1, Number.NaN, 2], 3)).toEqual([0, 0, 1]);
-  });
-
-  test("exports rounded 3D bar camera settings", () => {
-    const camera = new THREE.PerspectiveCamera(42.12345, 1, 0.1, 100);
-    camera.position.set(4.12345, 2.34567, -6.78901);
-
-    expect(barsCameraSettings(camera, new THREE.Vector3(-1.2347, 0.7777, 3.21))).toEqual({
-      fov: 42.123,
-      sceneRotationY: 0,
-      position: { x: 4.123, y: 2.346, z: -6.789 },
-      target: { x: -1.235, y: 0.778, z: 3.21 },
-    });
   });
 
   test("separates the spectrum into bass, mid, and treble responses", () => {
@@ -127,12 +99,6 @@ describe("COAST.FM player", () => {
     }
 
     expect(detector.bpm).toBeCloseTo(120);
-  });
-
-  test("uses a responsive blob detail level", () => {
-    expect(blobDetailForViewport(16, 8)).toBe(1);
-    expect(blobDetailForViewport(40, 20)).toBe(3);
-    expect(blobDetailForViewport(80, 40)).toBe(5);
   });
 
   test("resets a stale tempo estimate", () => {
