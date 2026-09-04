@@ -12,6 +12,17 @@ To run:
 bun dev
 ```
 
+## Releases
+
+Pushing a version tag publishes standalone executables for macOS (Apple Silicon
+and Intel) and Linux (ARM64 and x64). End users can run these binaries without
+installing Bun:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 Start directly on the desktop instead of showing the boot sequence:
 
 ```bash

@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - bun-darwin-arm64
+          - bun-darwin-x64
+          - bun-linux-arm64
+          - bun-linux-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          platform="${TARGET#bun-}"
+          os="${platform%-*}"
+          arch="${platform##*-}"
+          bun install --os="$os" --cpu="$arch"
+
+      - name: Build standalone executable
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          platform="${TARGET#bun-}"
+          bun build src/index.tsx --compile --target="$TARGET" --outfile="coastty-${platform}"
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: coastty-${{ matrix.target }}
+          path: coastty-*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download executables
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        working-directory: dist
+        run: |
+          chmod +x coastty-*
+          sha256sum coastty-* > checksums.txt
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/coastty-*
+            dist/checksums.txt
