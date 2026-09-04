@@ -26,7 +26,11 @@ case "$(uname -m)" in
 esac
 
 binary="coastty-${os}-${arch}"
-release_url="https://github.com/${repository}/releases/download/${version}"
+if [ "$version" = "latest" ]; then
+  release_url="https://github.com/${repository}/releases/latest/download"
+else
+  release_url="https://github.com/${repository}/releases/download/${version}"
+fi
 temp_dir="$(mktemp -d)"
 
 cleanup() {
