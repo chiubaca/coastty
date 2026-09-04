@@ -23,6 +23,12 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
+Install the latest release with:
+
+```bash
+curl -fsSL https://github.com/chiubaca/coastty/releases/latest/download/install.sh | sh
+```
+
 Start directly on the desktop instead of showing the boot sequence:
 
 ```bash

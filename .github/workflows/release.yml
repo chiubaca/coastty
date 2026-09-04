@@ -53,6 +53,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download executables
         uses: actions/download-artifact@v4
         with:
@@ -72,3 +74,4 @@ jobs:
           files: |
             dist/coastty-*
             dist/checksums.txt
+            install.sh
