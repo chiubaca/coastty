@@ -2,6 +2,7 @@ import { CoasttyPlayer } from "./coastty-player";
 import { TextEditor } from "./text-editor";
 import { ThreeDemo } from "./three-demo";
 import { ImageViewer } from "./image-viewer";
+import { Webcam } from "./webcam";
 import { About } from "./about";
 import { appIcon } from "./icons";
 import type { AppManifest } from "./types";
@@ -42,6 +43,15 @@ export const desktopApps: AppManifest[] = [
     initialSize: { width: 78, height: 28 },
     contentPadding: 0,
     Component: ImageViewer,
+  },
+  {
+    id: "webcam",
+    title: "CAMERA",
+    icon: appIcon({ glyph: "circle", fallback: "O" }),
+    initialPosition: { left: 7, top: 2 },
+    initialSize: { width: 74, height: 27 },
+    contentPadding: 0,
+    Component: Webcam,
   },
 ];
 

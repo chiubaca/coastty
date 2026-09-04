@@ -38,6 +38,26 @@ Use ASCII icons instead when the terminal does not have a Nerd Font selected:
 COASTTY_ICON_VARIANT=ascii bun dev
 ```
 
+## Webcam
+
+The Camera app streams mirrored JPEG frames from FFmpeg directly into OpenTUI.
+Install FFmpeg before opening it. On macOS with Homebrew:
+
+```bash
+brew install ffmpeg
+```
+
+macOS will ask for camera access for the terminal running Coastty. The app uses
+camera `0` on macOS and `/dev/video0` on Linux by default. Override the FFmpeg
+input device when needed:
+
+```bash
+COASTTY_CAMERA_DEVICE="1:none" bun dev
+```
+
+Press `A` in the Camera app to toggle its live ASCII-art mode. Press `Space` to
+turn camera capture on or off.
+
 ## Effect architecture
 
 The application uses Effect as its process runtime and Effect Atom for shared
