@@ -76,5 +76,22 @@ chmod +x "$install_path"
 printf 'Coastty installed to %s\n' "$install_path"
 case ":$PATH:" in
   *":$install_dir:"*) ;;
-  *) printf 'Add %s to your PATH to run coastty from any directory.\n' "$install_dir" ;;
+  *)
+    case "${SHELL:-}" in
+      */zsh) shell_config="$HOME/.zshrc" ;;
+      */bash) shell_config="$HOME/.bashrc" ;;
+      *) shell_config="$HOME/.profile" ;;
+    esac
+
+    path_line='export PATH="$HOME/.local/bin:$PATH"'
+    if [ "$install_dir" != "$HOME/.local/bin" ]; then
+      path_line="export PATH=\"${install_dir}:\$PATH\""
+    fi
+
+    if ! grep -Fqx "$path_line" "$shell_config" 2>/dev/null; then
+      printf '\n# Added by Coastty installer\n%s\n' "$path_line" >> "$shell_config"
+      printf 'Added %s to PATH in %s. Restart your terminal or run:\n' "$install_dir" "$shell_config"
+      printf '  . %s\n' "$shell_config"
+    fi
+    ;;
 esac

@@ -29,6 +29,9 @@ Install the latest release with:
 curl -fsSL https://github.com/chiubaca/coastty/releases/latest/download/install.sh | sh
 ```
 
+The installer places Coastty in `~/.local/bin` and adds that directory to your
+shell's PATH when needed.
+
 Start directly on the desktop instead of showing the boot sequence:
 
 ```bash
