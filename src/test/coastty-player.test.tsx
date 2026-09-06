@@ -35,7 +35,7 @@ describe("COAST.FM player", () => {
       expect(frame).toContain("[1] 2D BARS");
       expect(frame).toContain("[2] 3D BARS");
       expect(frame).toContain("[3] BLOB");
-      expect(frame).toContain("WAVE 0.0 / 3.0");
+      expect(frame).toContain("NACRE / AUDIO SCULPTURE");
       expect(frame).not.toContain("COMING SOON");
       expect(commands).toEqual([]);
 
@@ -43,11 +43,11 @@ describe("COAST.FM player", () => {
       await mockMouse.release(27, 13);
       await flush();
       frame = captureCharFrame();
-      expect(frame).toContain("3D SPECTRUM");
+      expect(frame).toContain("PRISM / SPECTRUM");
       expect(frame).not.toContain("EXPORT CAMERA");
       expect(frame).not.toContain("PAN ");
       expect(frame).not.toContain("ROT ");
-      expect(frame).not.toContain("WAVE 0.0 / 3.0");
+      expect(frame).not.toContain("NACRE / AUDIO SCULPTURE");
     } finally {
       root.unmount();
       renderer.destroy();

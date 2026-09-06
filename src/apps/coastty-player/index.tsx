@@ -1,10 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react/Hooks";
 import { TextAttributes, type BoxRenderable, type KeyEvent } from "@opentui/core";
-import { extend, useKeyboard } from "@opentui/react";
-import { THREE, ThreeRenderable } from "@opentui/three";
+import { useKeyboard } from "@opentui/react";
 import { useEffect, useRef, useState } from "react";
-import { MeshStandardNodeMaterial } from "three/webgpu";
-import { positionLocal, time, uniform, vec3 } from "three/tsl";
 import type { AppComponentProps } from "../types";
 import { windowFocusedAtom, windowManagerAtom, WindowCommand } from "../../desktop/window-manager";
 import { playbackCommandAtom, playbackStateAtom } from "../../radio/playback-atoms";
@@ -17,14 +14,11 @@ import {
 } from "../../radio/playback";
 import { CoasttyText } from "../../ui/coastty-text";
 import { themes, useTheme, type ThemeColors } from "../../ui/theme";
+import { Spectrum } from "./spectrum";
+import { ThreeVisualizer } from "./three-visualizer";
+import { blobMusicLevels } from "./visualizer-motion";
 
-declare module "@opentui/react" {
-  interface OpenTUIComponents {
-    three: typeof ThreeRenderable;
-  }
-}
-
-extend({ three: ThreeRenderable });
+export { barHeights, blobMusicLevels } from "./visualizer-motion";
 
 function canPausePlayback(status: PlaybackStatus) {
   return status === "Connecting"
@@ -198,200 +192,6 @@ function PlayerSidebar({
   );
 }
 
-const BAR_COUNT = 24;
-
-const DEFAULT_BARS_CAMERA = {
-  fov: 42,
-  sceneRotationY: -1.529,
-  position: { x: 2.087, y: 0.403, z: 3.583 },
-  target: { x: -0.152, y: -1.089, z: 1.344 },
-};
-
-type BarsScene = {
-  readonly scene: THREE.Scene;
-  readonly camera: THREE.PerspectiveCamera;
-  readonly visual: THREE.Group;
-  readonly bars: readonly THREE.Mesh[];
-  readonly materials: readonly InstanceType<typeof MeshStandardNodeMaterial>[];
-  readonly ambientLight: THREE.AmbientLight;
-  readonly keyLight: THREE.DirectionalLight;
-  readonly rimLight: THREE.PointLight;
-};
-
-type BarsMotion = {
-  heights: number[];
-  target: readonly number[];
-  lastUpdatedAt: number | null;
-};
-
-export function barHeights(spectrum: readonly number[], count = BAR_COUNT) {
-  const values = spectrum.map((value) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
-  if (values.length === 0) return Array<number>(count).fill(0);
-  return Array.from({ length: count }, (_, index) => values[Math.min(values.length - 1, Math.floor(index * values.length / count))]!);
-}
-
-function Spectrum({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
-  const values = spectrum.length > 0 ? spectrum : Array<number>(BAR_COUNT).fill(0);
-  return (
-    <box flexGrow={1} minWidth={1} paddingX={1} paddingTop={1} flexDirection="row" alignItems="flex-end">
-      {values.map((value, index) => (
-        <box key={index} flexGrow={1} minWidth={1} height="100%" justifyContent="flex-end">
-          <box
-            width="100%"
-            height={`${Math.max(5, Math.round(value * 100))}%`}
-            backgroundColor={index % 5 === 0 ? colors.highlight : index % 2 === 0 ? colors.accent : colors.secondary}
-          />
-        </box>
-      ))}
-    </box>
-  );
-}
-
-function createBarsScene(): BarsScene {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(DEFAULT_BARS_CAMERA.fov, 1, 0.1, 100);
-  const target = new THREE.Vector3(
-    DEFAULT_BARS_CAMERA.target.x,
-    DEFAULT_BARS_CAMERA.target.y,
-    DEFAULT_BARS_CAMERA.target.z,
-  );
-  camera.position.set(
-    DEFAULT_BARS_CAMERA.position.x,
-    DEFAULT_BARS_CAMERA.position.y,
-    DEFAULT_BARS_CAMERA.position.z,
-  );
-  camera.lookAt(target);
-
-  const visual = new THREE.Group();
-  visual.rotation.y = DEFAULT_BARS_CAMERA.sceneRotationY;
-  const geometry = new THREE.BoxGeometry(0.18, 1, 0.56);
-  const bars = Array.from({ length: BAR_COUNT }, (_, index) => {
-    const material = new MeshStandardNodeMaterial({
-      color: new THREE.Color("#7cffc9"),
-      emissive: new THREE.Color("#4ba58e"),
-      emissiveIntensity: 0.45,
-      metalness: 0.92,
-      roughness: 0.24,
-    });
-    const bar = new THREE.Mesh(geometry, material);
-    bar.position.set((index - (BAR_COUNT - 1) / 2) * 0.28, -1.26, 0);
-    bar.scale.set(1, 0.04, 1);
-    bar.rotation.y = index % 2 === 0 ? -0.09 : 0.09;
-    visual.add(bar);
-    return bar;
-  });
-  scene.add(visual);
-
-  const ambientLight = new THREE.AmbientLight(new THREE.Color("#4ba58e"), 2.2);
-  scene.add(ambientLight);
-  const keyLight = new THREE.DirectionalLight(new THREE.Color("#b9ffe8"), 4.5);
-  keyLight.position.set(2.5, 4, 3);
-  scene.add(keyLight);
-  const rimLight = new THREE.PointLight(new THREE.Color("#7cffc9"), 16, 10);
-  rimLight.position.set(-2.5, 1, 2);
-  scene.add(rimLight);
-
-  return {
-    scene,
-    camera,
-    visual,
-    bars,
-    materials: bars.map((bar) => bar.material as InstanceType<typeof MeshStandardNodeMaterial>),
-    ambientLight,
-    keyLight,
-    rimLight,
-  };
-}
-
-function BarsVisualizer({ spectrum, colors }: { readonly spectrum: readonly number[]; readonly colors: ThemeColors }) {
-  const [model] = useState(createBarsScene);
-  const motion = useRef<BarsMotion>({
-    heights: Array<number>(BAR_COUNT).fill(0),
-    target: barHeights(spectrum),
-    lastUpdatedAt: null,
-  });
-
-  useEffect(() => {
-    model.scene.background = new THREE.Color(colors.background);
-    const barColors = [colors.accent, colors.highlight, colors.secondary];
-    model.materials.forEach((material, index) => {
-      const color = barColors[index % barColors.length]!;
-      material.color.set(color);
-      material.emissive.set(color);
-    });
-    model.ambientLight.color.set(colors.secondary);
-    model.keyLight.color.set(colors.glow);
-    model.rimLight.color.set(colors.accent);
-  }, [colors, model]);
-
-  useEffect(() => {
-    motion.current.target = barHeights(spectrum);
-  }, [spectrum]);
-
-  useEffect(() => {
-    const animation = setInterval(() => {
-      const current = motion.current;
-      const timestamp = Date.now();
-      const elapsedSeconds = current.lastUpdatedAt === null
-        ? 0
-        : Math.min(0.2, Math.max(0, timestamp - current.lastUpdatedAt) / 1_000);
-      current.lastUpdatedAt = timestamp;
-
-      model.bars.forEach((bar, index) => {
-        const height = smooth(current.heights[index] ?? 0, current.target[index] ?? 0, elapsedSeconds, 16, 2.8);
-        current.heights[index] = height;
-        const scale = 0.06 + height * 3.7;
-        bar.scale.y = scale;
-        bar.position.y = -1.3 + scale / 2;
-        bar.scale.z = 0.9 + height * 0.35;
-        (bar.material as InstanceType<typeof MeshStandardNodeMaterial>).emissiveIntensity = 0.28 + height * 1.1;
-      });
-      model.rimLight.intensity = 10 + Math.max(...current.heights) * 14;
-    }, 16);
-    return () => clearInterval(animation);
-  }, [model]);
-
-  return (
-    <box flexGrow={1} minHeight={1} backgroundColor={colors.background}>
-      <three flexGrow={1} minHeight={1} scene={model.scene} camera={model.camera} />
-      <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
-        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>3D SPECTRUM</CoasttyText>
-      </box>
-    </box>
-  );
-}
-
-type BlobScene = {
-  readonly scene: THREE.Scene;
-  readonly camera: THREE.PerspectiveCamera;
-  readonly visual: THREE.Group;
-  readonly mesh: THREE.Mesh;
-  readonly material: InstanceType<typeof MeshStandardNodeMaterial>;
-  readonly waveStrength: { value: number };
-  readonly rimLight: THREE.PointLight;
-};
-
-type BlobLevels = {
-  readonly bass: number;
-  readonly mid: number;
-  readonly treble: number;
-  readonly peak: number;
-};
-
-type BlobMotion = {
-  bass: number;
-  mid: number;
-  treble: number;
-  peak: number;
-  beat: number;
-  target: BlobLevels;
-  targetBeat: number;
-  tempo: TempoDetector;
-  tempoColorMix: number;
-  rotationSpeed: number;
-  lastUpdatedAt: number | null;
-};
-
 export type TempoDetector = {
   readonly baseline: number;
   readonly previousBass: number;
@@ -400,65 +200,8 @@ export type TempoDetector = {
   readonly bpm: number | null;
 };
 
-const BLOB_BLUE = new THREE.Color("#3b82f6");
-const BLOB_RED = new THREE.Color("#ef4444");
-
-function createBlobScene(): BlobScene {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
-  camera.position.set(0, 0.35, 2.35);
-  camera.lookAt(0, 0, 0);
-
-  const material = new MeshStandardNodeMaterial({
-    color: BLOB_BLUE,
-    emissive: BLOB_BLUE,
-    emissiveIntensity: 1.5,
-    metalness: 1,
-    roughness: 0.7,
-    wireframe: true,
-    wireframeLinewidth: 2,
-    opacity: 0.5,
-    transparent: true,
-  });
-  const waveStrength = uniform(0);
-  const wave = positionLocal.y.mul(4).add(time.mul(2.4)).sin().mul(0.16)
-    .add(positionLocal.x.mul(3).add(time.mul(1.8)).cos().mul(0.1))
-    .mul(waveStrength);
-  material.positionNode = positionLocal.add(vec3(wave.mul(0.25), wave.mul(0.35), wave));
-
-  const visual = new THREE.Group();
-  visual.scale.setScalar(0.7);
-  const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), material);
-  visual.add(mesh);
-  scene.add(visual);
-
-  scene.add(new THREE.AmbientLight(new THREE.Color("#7868c7"), 4));
-  const keyLight = new THREE.DirectionalLight(new THREE.Color("#ffd166"), 8);
-  keyLight.position.set(2.5, 3, 3);
-  scene.add(keyLight);
-  const rimLight = new THREE.PointLight(BLOB_BLUE, 8, 10);
-  rimLight.position.set(-2.5, -1, 2);
-  scene.add(rimLight);
-
-  return { scene, camera, visual, mesh, material, waveStrength, rimLight };
-}
-
 export function blobWaveStrength(spectrum: readonly number[]) {
   return blobMusicLevels(spectrum).peak * 3;
-}
-
-export function blobMusicLevels(spectrum: readonly number[]): BlobLevels {
-  const values = spectrum.map((value) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
-  const bandSize = Math.ceil(values.length / 3);
-  const average = (start: number) => {
-    const band = values.slice(start, start + bandSize);
-    return band.length === 0 ? 0 : band.reduce((total, value) => total + value, 0) / band.length;
-  };
-
-  const bass = average(0);
-  const mid = average(bandSize);
-  const treble = average(bandSize * 2);
-  return { bass, mid, treble, peak: Math.max(bass, mid, treble) };
 }
 
 export function createTempoDetector(): TempoDetector {
@@ -495,106 +238,6 @@ export function updateTempoDetector(detector: TempoDetector, bass: number, times
   const median = sorted[Math.floor(sorted.length / 2)]!;
   const bpm = detector.bpm === null ? median : detector.bpm + (median - detector.bpm) * 0.25;
   return { ...next, lastOnsetAt: timestamp, recentBpms, bpm };
-}
-
-function smooth(current: number, target: number, elapsedSeconds: number, riseRate = 12, fallRate = 1.3) {
-  if (target === 0 && current < 0.003) return 0;
-  const rate = target > current ? riseRate : fallRate;
-  return current + (target - current) * (1 - Math.exp(-rate * elapsedSeconds));
-}
-
-function BlobVisualizer({
-  spectrum,
-  colors,
-}: {
-  readonly spectrum: readonly number[];
-  readonly colors: ThemeColors;
-}) {
-  const [model] = useState(createBlobScene);
-  const wave = blobWaveStrength(spectrum);
-  const motion = useRef<BlobMotion>({
-    ...blobMusicLevels(spectrum),
-    beat: 0,
-    target: blobMusicLevels(spectrum),
-    targetBeat: 0,
-    tempo: createTempoDetector(),
-    tempoColorMix: 0,
-    rotationSpeed: 0,
-    lastUpdatedAt: null,
-  });
-
-  useEffect(() => {
-    model.scene.background = new THREE.Color(colors.background);
-  }, [colors.background, model]);
-
-  useEffect(() => {
-    const current = motion.current;
-    const target = blobMusicLevels(spectrum);
-    const timestamp = Date.now();
-    current.tempo = updateTempoDetector(current.tempo, target.bass, timestamp);
-    const bassRise = target.bass - current.target.bass;
-    const beat = target.bass > 0.45 && bassRise > 0.05 ? Math.min(1, bassRise * 4) : 0;
-    current.target = target;
-    current.targetBeat = beat;
-  }, [spectrum]);
-
-  useEffect(() => {
-    const animation = setInterval(() => {
-      const current = motion.current;
-      const timestamp = Date.now();
-      const elapsedSeconds = current.lastUpdatedAt === null
-        ? 0
-        : Math.min(0.2, Math.max(0, timestamp - current.lastUpdatedAt) / 1_000);
-      current.lastUpdatedAt = timestamp;
-      current.bass = smooth(current.bass, current.target.bass, elapsedSeconds);
-      current.mid = smooth(current.mid, current.target.mid, elapsedSeconds);
-      current.treble = smooth(current.treble, current.target.treble, elapsedSeconds);
-      current.peak = smooth(current.peak, current.target.peak, elapsedSeconds);
-      current.beat = smooth(current.beat, current.targetBeat, elapsedSeconds);
-
-      model.waveStrength.value = current.peak * 3;
-      model.visual.scale.setScalar(0.7 + current.bass * 0.25);
-      model.material.emissiveIntensity = 1.5 + current.peak * 1.5;
-      model.material.opacity = 0.5 + current.mid * 0.35;
-      model.material.roughness = 0.7 - current.mid * 0.45;
-      const targetTempoColorMix = current.tempo.bpm === null
-        ? 0
-        : Math.max(0, Math.min(1, (current.tempo.bpm - 80) / 80));
-      current.tempoColorMix = smooth(current.tempoColorMix, targetTempoColorMix, elapsedSeconds, 2, 2);
-      model.material.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
-      model.material.emissive.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
-      model.rimLight.color.lerpColors(BLOB_BLUE, BLOB_RED, current.tempoColorMix);
-      model.rimLight.intensity = 20 + current.treble * 38;
-
-      const fov = 44 - current.beat * 5;
-      if (model.camera.fov !== fov) {
-        model.camera.fov = fov;
-        model.camera.updateProjectionMatrix();
-      }
-      const tempoRotationSpeed = current.tempo.bpm === null
-        ? 0
-        : Math.max(0.5, Math.min(3, 0.5 + (current.tempo.bpm - 80) * 2.5 / 80));
-      const targetRotationSpeed = current.peak === 0 ? 0 : tempoRotationSpeed;
-      current.rotationSpeed = smooth(current.rotationSpeed, targetRotationSpeed, elapsedSeconds);
-      model.visual.rotation.x += elapsedSeconds * current.rotationSpeed * 0.6;
-      model.visual.rotation.y += elapsedSeconds * current.rotationSpeed;
-    }, 16);
-    return () => clearInterval(animation);
-  }, [model]);
-
-  return (
-    <box flexGrow={1} minHeight={1} backgroundColor={colors.background}>
-      <three
-        flexGrow={1}
-        minHeight={1}
-        scene={model.scene}
-        camera={model.camera}
-      />
-      <box position="absolute" top={0} right={0} paddingX={1} backgroundColor={colors.shadow}>
-        <CoasttyText fg={colors.glow} attributes={TextAttributes.BOLD}>WAVE {wave.toFixed(1)} / 3.0</CoasttyText>
-      </box>
-    </box>
-  );
 }
 
 function formatTime(seconds: number) {
@@ -739,9 +382,12 @@ export function CoasttyPlayerView({
           </box>
           {visualizer === "2D Bars"
             ? <Spectrum spectrum={snapshot.spectrum} colors={colors} />
-            : visualizer === "3D Bars"
-            ? <BarsVisualizer spectrum={snapshot.spectrum} colors={colors} />
-            : <BlobVisualizer spectrum={snapshot.spectrum} colors={colors} />}
+            : <ThreeVisualizer
+              key={visualizer}
+              kind={visualizer === "3D Bars" ? "bars" : "blob"}
+              spectrum={snapshot.spectrum}
+              colors={colors}
+            />}
         </box>
       </box>
 

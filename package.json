@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun run --watch src/index.tsx",
     "prototype:player-controls": "bun run src/apps/coastty-player/player-controls.prototype.tsx",
+    "preview:visualizers": "bun run src/apps/coastty-player/visualizers.preview.tsx",
     "smoke:audius": "bun run src/radio/audius-smoke.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"

@@ -43,6 +43,21 @@ variable to use a read-only key for higher published limits. Playlist cursors
 are stored under `~/.coastty/playlist-cursors`; set `COASTTY_STATE_DIR` to use a
 different device-local cursor directory.
 
+## Music visualizers
+
+In COAST.FM, press `1` for the luminous 2D spectrum, `2` for the sculpted 3D
+prisms, or `3` for the music-deformed Nacre orb. The 3D modes require WebGPU.
+All three follow the current theme and adapt to the player window size.
+
+Preview the visuals with simulated spectrum data (no audio or network required):
+
+```bash
+bun run preview:visualizers
+```
+
+In the preview, use `1`–`3` to switch modes, `T` to cycle themes, `Space` to
+toggle silence, and `Esc` to exit. Resize the terminal to check compact layouts.
+
 ## Icons
 
 App icons use Nerd Font glyphs from `@kud/glyphs`. Install and select a Nerd Font
