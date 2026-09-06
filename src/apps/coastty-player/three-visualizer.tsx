@@ -3,6 +3,7 @@ import { extend } from "@opentui/react";
 import { ThreeCliRenderer } from "@opentui/three";
 import { CoasttyText } from "../../ui/coastty-text";
 import type { ThemeColors } from "../../ui/theme";
+import { AsciiStarfield } from "./ascii-starfield";
 import { createBarsScene, createBlobScene, type MusicScene } from "./visualizer-scenes";
 
 interface VisualizerProps {
@@ -124,6 +125,7 @@ export function ThreeVisualizer({ kind, spectrum, colors }: VisualizerProps) {
   return (
     <box flexGrow={1} minWidth={1} minHeight={1} backgroundColor={colors.background} overflow="hidden">
       <musicScene key={kind} kind={kind} spectrum={spectrum} colors={colors} flexGrow={1} minWidth={1} minHeight={1} />
+      {kind === "blob" ? <AsciiStarfield spectrum={spectrum} colors={colors} /> : null}
       <box position="absolute" top={0} left={1} backgroundColor={colors.background}>
         <CoasttyText fg={colors.muted}>{kind === "bars" ? "PRISM / SPECTRUM" : "NACRE / AUDIO SCULPTURE"}</CoasttyText>
       </box>

@@ -8,12 +8,12 @@ export function About(_props: AppComponentProps) {
 
   return (
     <box flexGrow={1} flexDirection="column" gap={1} backgroundColor={colors.background}>
-      <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>WAVE OS</CoasttyText>
+      <CoasttyText fg={colors.highlight} attributes={TextAttributes.BOLD}>CoasTTY</CoasttyText>
       <CoasttyText fg={colors.glowSoft} wrapMode="word">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        relax, slow down, and enjoy the revolution unfold.
       </CoasttyText>
       <CoasttyText fg={colors.primary} wrapMode="word">
-        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        CoasTTY is where end of the day meets digital serenity.
       </CoasttyText>
     </box>
   );
